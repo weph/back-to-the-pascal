@@ -6,22 +6,50 @@ type
     SpriteData = Array[0..255] of Byte;
 
     Sprite = object
-           constructor Init(TheImage: SpriteData);
+           constructor Init(InitialX, InitialY: Word; TheImage: SpriteData);
 
            public
+                 X, Y: Word;
                  procedure SetPosition(NewX, NewY: Word);
                  procedure Draw;
                  procedure Erase;
-
+                 procedure Update; virtual;
            private
-                  X, Y, PrevX, PrevY: Word;
+                  PrevX, PrevY: Word;
                   Image: SpriteData;
                   Background: SpriteData;
     end;
 
+    MartySprite = object(Sprite)
+                private
+                       Direction: ShortInt;
+                       PushCycle: Byte;
+                       OllieCycle: Byte;
+                       OllieSpeed: Byte;
+                       Speed: Byte;
+                       GroundY: Word;
+                public
+                      procedure Push(D: ShortInt);
+                      procedure Ollie;
+                      procedure Update; virtual;
+    end;
+
+    Enemy = object(Sprite)
+                private
+                       Direction: ShortInt;
+
+                public
+                      constructor Init(InitialX, InitialY: Word; TheImage: SpriteData);
+                      procedure Update; virtual;
+    end;
+
+    PSprite = ^Sprite;
+
 const
      ScreenWidth = 320;
      ScreenHeight = 200;
+     SpriteWidth = 16;
+     SpriteHeight = 16;
 
      MartyImage: SpriteData = (
              $00, $00, $00, $00, $00, $72, $72, $72, $72, $72, $00, $00, $00, $00, $00, $00,
@@ -42,16 +70,43 @@ const
              $00, $00, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $00, $00
      );
 
+     Map: Array[0..(25 * 40)-1] of Byte = (
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+     );
+
 var
    i: Word;
    Running: Boolean;
-   Tile: Array[0..1] of Array[0..63] of Byte;
+   Tile: Array[0..2] of Array[0..63] of Byte;
    CurrentTile: Byte;
-   Sx, Sy: Word;
    Buffer: ^VideoBuffer;
-   Marty: Sprite;
-   MartySpeed: Byte;
+   Marty: MartySprite;
    Key: Char;
+   Sprites: Array[0..2] of PSprite;
 
 procedure PutPixel(X, Y: Word; Color: Byte);
 begin
@@ -100,11 +155,11 @@ begin
      end;
 end;
 
-constructor Sprite.Init(TheImage: SpriteData);
+constructor Sprite.Init(InitialX, InitialY: Word; TheImage: SpriteData);
 begin
+     X := InitialX;
+     Y := InitialY;
      Image := TheImage;
-     X := 160;
-     y := 100;
 end;
 
 procedure Sprite.Draw;
@@ -116,12 +171,12 @@ begin
      PrevX := X;
      PrevY := Y;
 
-     CopyFromBuffer(@Background, X, Y, 16, 16);
+     CopyFromBuffer(@Background, X, Y, SpriteWidth, SpriteHeight);
 
-     for Ty := 0 to 15 do
-         for Tx := 0 to 15 do
+     for Ty := 0 to SpriteHeight - 1 do
+         for Tx := 0 to SpriteWidth - 1 do
          begin
-             Color := Image[Ty * 16 + Tx];
+             Color := Image[Ty * SpriteWidth + Tx];
              if Color <> 0 then
                 PutPixel(X + Tx, Y + Ty, Color);
          end;
@@ -133,13 +188,78 @@ var
    Video: PChar;
    Row: PChar;
 begin
-     CopyToBuffer(@Background, PrevX, PrevY, 16, 16);
+     CopyToBuffer(@Background, PrevX, PrevY, SpriteWidth, SpriteHeight);
 end;
 
 procedure Sprite.SetPosition(NewX, NewY: Word);
 begin
      X := NewX;
      Y := NewY;
+end;
+
+procedure Sprite.Update;
+begin
+end;
+
+procedure MartySprite.Push(D: ShortInt);
+begin
+     Direction := D;
+     PushCycle := 30;
+     Speed := 4;
+end;
+
+procedure MartySprite.Ollie;
+begin
+     if OllieCycle = 0 then
+     begin
+        OllieCycle := 6;
+        OllieSpeed := 4;
+        GroundY := Y;
+     end;
+end;
+
+procedure MartySprite.Update;
+begin
+     if PushCycle > 0 then
+     begin
+          X := X + Speed * Direction;
+
+          if Speed > 1 then
+             Speed := Speed - 1;
+
+          PushCycle := PushCycle - 1;
+     end;
+
+     if OllieCycle > 0 then
+     begin
+          Y := Y - OllieSpeed;
+          OllieCycle := OllieCycle - 1;
+          if OllieSpeed > 1 then
+             OllieSpeed := OllieSpeed - 1;
+     end
+     else if Y < GroundY then
+     begin
+          Y := Y + OllieSpeed;
+     end;
+
+     if (X <= 0) or ((X + SpriteWidth) > ScreenWidth) then
+     begin
+          PushCycle := 0;
+     end;
+end;
+
+constructor Enemy.Init(InitialX, InitialY: Word; TheImage: SpriteData);
+begin
+     Sprite.Init(InitialX, InitialY, TheImage);
+     Direction := -1;
+end;
+
+procedure Enemy.Update;
+begin
+     X := X + Direction;
+
+     if (X <= 0) or ((X + SpriteWidth) > ScreenWidth) then
+        Direction := Direction * -1;
 end;
 
 procedure SetVideoMode(Mode: Byte);
@@ -188,7 +308,37 @@ var
 begin
      for y := 0 to 24 do
          for x := 0 to 39 do
-             DrawTile(x * 8, y * 8, Tile[CurrentTile]);
+             DrawTile(x * 8, y * 8, Tile[Map[y * 40 + x]]);
+end;
+
+procedure RedrawMapParts(S: PSprite);
+var
+   X, Y, StartX, StartY, EndX, EndY: Byte;
+begin
+     StartX := S^.X div 8;
+     StartY := S^.Y div 8;
+     EndX := StartX + 2;
+     EndY := StartY + 2;
+
+     if EndX > 39 then
+        EndX := 39;
+
+     if EndY > 24 then
+        EndY := 24;
+
+     for Y := StartY to EndY do
+         for X := StartX to EndX do
+             DrawTile(X * 8, Y * 8, Tile[Map[Y * 40 + X]]);
+end;
+
+function EnemyInstance(X, Y: Word): PSprite;
+var
+   EnemyObj: ^Enemy;
+begin
+     New(EnemyObj);
+     EnemyObj^.Init(X, Y, MartyImage);
+
+     EnemyInstance := EnemyObj;
 end;
 
 begin
@@ -198,14 +348,12 @@ begin
      for i := 0 to 63 do
      begin
          Tile[0][i] := 9;
-         Tile[1][i] := 64 + i;
+         Tile[1][i] := 8;
+         Tile[2][i] := 0;
      end;
 
      for i := 0 to 63999 do
-         Buffer^[i] := 1;
-
-     Sx := 10;
-     Sy := 100;
+         Buffer^[i] := 0;
 
      Running := true;
 
@@ -213,18 +361,23 @@ begin
 
      DrawMap;
 
-     Marty.Init(MartyImage);
-     MartySpeed := 8;
+     Marty.Init(100, 166, MartyImage);
+
+     Sprites[0] := @Marty;
+     Sprites[1] := EnemyInstance(300, 166);
+     Sprites[2] := EnemyInstance(10, 166);
+
      while Running do
      begin
-          Marty.SetPosition(Sx, Sy);
-          Marty.Draw;
+          for i := 0 to 2 do
+              Sprites[i]^.Draw;
 
           WaitForVRetrace;
 
           UpdateScreen;
 
-          Marty.Erase;
+          for i := 0 to 2 do
+              RedrawMapParts(Sprites[i]);
 
           if KeyPressed then
           begin
@@ -232,10 +385,14 @@ begin
 
                case Key of
                     'q': Running := false;
-                    'a': Sx := Sx - MartySpeed;
-                    'd': Sx := Sx + MartySpeed;
+                    'w': Marty.Ollie;
+                    'a': Marty.Push(-1);
+                    'd': Marty.Push(1);
                end;
           end;
+
+          for i := 0 to 2 do
+              Sprites[i]^.Update;
      end;
 
      SetVideoMode(3);
