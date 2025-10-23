@@ -27,7 +27,6 @@ type
                        OllieCycle: Byte;
                        OllieSpeed: Byte;
                        Speed: Byte;
-                       GroundY: Word;
                 public
                       procedure Push(D: ShortInt);
                       procedure Ollie;
@@ -39,7 +38,11 @@ type
                        Direction: ShortInt;
 
                 public
-                      constructor Init(InitialX, InitialY: Word; TheImage: SpriteData);
+                      constructor Init(
+                                  InitialX, InitialY: Word;
+                                  TheImage: SpriteData;
+                                  PaletteOffset: Byte
+                      );
                       procedure Update; virtual;
     end;
 
@@ -50,6 +53,11 @@ const
      ScreenHeight = 200;
      SpriteWidth = 16;
      SpriteHeight = 16;
+     TileWidth = 8;
+     TileHeight = 8;
+     MapWidth = 40;
+     MapHeight = 25;
+     NumSprites = 0;
 
      MartyImage: SpriteData = (
              $00, $00, $00, $00, $00, $72, $72, $72, $72, $72, $00, $00, $00, $00, $00, $00,
@@ -70,7 +78,7 @@ const
              $00, $00, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $00, $00
      );
 
-     Map: Array[0..(25 * 40)-1] of Byte = (
+     Map: Array[0..(MapWidth * MapHeight)-1] of Byte = (
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -90,12 +98,12 @@ const
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1
      );
 
 var
@@ -107,6 +115,28 @@ var
    Marty: MartySprite;
    Key: Char;
    Sprites: Array[0..2] of PSprite;
+
+function NextGroundYAt(X, Y: Word): Word;
+var
+   Txl, Txr, Ty: Byte;
+begin
+     Txl := X div TileWidth;
+     Txr := (X + SpriteWidth) div TileWidth;
+     Ty := Y div TileHeight;
+
+     NextGroundYAt := ScreenHeight + SpriteHeight * 2;
+
+     while Ty < MapHeight do
+     begin
+          if (Map[Ty * MapWidth + Txl] > 0) or (Map[Ty * MapWidth + Txr] > 0) then
+          begin
+             NextGroundYAt := Ty * TileHeight;
+             Break;
+          end;
+
+          Ty := Ty + 1;
+     end;
+end;
 
 procedure PutPixel(X, Y: Word; Color: Byte);
 begin
@@ -165,6 +195,7 @@ end;
 procedure Sprite.Draw;
 var
    Tx, Ty, Color: Byte;
+   Sx, Sy: Word;
    Row: PChar;
    Video: PChar;
 begin
@@ -177,8 +208,10 @@ begin
          for Tx := 0 to SpriteWidth - 1 do
          begin
              Color := Image[Ty * SpriteWidth + Tx];
-             if Color <> 0 then
-                PutPixel(X + Tx, Y + Ty, Color);
+             Sx := X + Tx;
+             Sy := Y + Ty;
+             if (Color <> 0) and (Sx > 0) and (Sx < ScreenWidth) and (Sy > 0) and (Sy < ScreenHeight) then
+                PutPixel(Sx, Sy, Color);
          end;
 end;
 
@@ -212,17 +245,41 @@ procedure MartySprite.Ollie;
 begin
      if OllieCycle = 0 then
      begin
-        OllieCycle := 6;
-        OllieSpeed := 4;
-        GroundY := Y;
+        OllieCycle := 7;
+        OllieSpeed := 5;
+        Speed := 6;
      end;
 end;
 
 procedure MartySprite.Update;
+var
+   GroundY, NextX, NextY: Word;
+   Txl, Txr, Tyt, Tyb, Ty: Byte;
+   Collision: Boolean;
 begin
+     NextX := X;
+     NextY := Y;
+     GroundY := NextGroundYAt(X, Y) - SpriteHeight - 2;
+
+     if OllieCycle > 0 then
+     begin
+          NextY := Y - OllieSpeed;
+          OllieCycle := OllieCycle - 1;
+          if OllieSpeed > 1 then
+             OllieSpeed := OllieSpeed - 1;
+
+          Speed := 4;
+     end
+     else if Y < GroundY then
+     begin
+          NextY := Y + 2;
+          {Y := Y + OllieSpeed;
+          Speed := 3;}
+     end;
+
      if PushCycle > 0 then
      begin
-          X := X + Speed * Direction;
+          NextX := X + Speed * Direction;
 
           if Speed > 1 then
              Speed := Speed - 1;
@@ -230,26 +287,51 @@ begin
           PushCycle := PushCycle - 1;
      end;
 
-     if OllieCycle > 0 then
+     Txl := NextX div TileWidth;
+     Txr := (NextX + SpriteWidth) div TileWidth;
+     Tyt := NextY div TileHeight;
+     Tyb := (NextY + SpriteHeight) div TileHeight;
+
+     Collision := false;
+     for Ty := Tyt to Tyb do
+          if (Map[Ty * MapWidth + Txl] > 0) or (Map[Ty * MapWidth + Txr] > 0) then
+          begin
+               Collision := true;
+               Break;
+          end;
+
+     if not Collision then
      begin
-          Y := Y - OllieSpeed;
-          OllieCycle := OllieCycle - 1;
-          if OllieSpeed > 1 then
-             OllieSpeed := OllieSpeed - 1;
+          X := NextX;
      end
-     else if Y < GroundY then
+     else
      begin
-          Y := Y + OllieSpeed;
+          OllieCycle := 0;
      end;
 
-     if (X <= 0) or ((X + SpriteWidth) > ScreenWidth) then
+     if NextY > GroundY then
+        NextY := GroundY;
+
+     Y := NextY;
+
+     {if (X <= 0) or ((X + SpriteWidth) > ScreenWidth) then
      begin
           PushCycle := 0;
-     end;
+     end;}
 end;
 
-constructor Enemy.Init(InitialX, InitialY: Word; TheImage: SpriteData);
+constructor Enemy.Init(
+            InitialX, InitialY: Word;
+            TheImage: SpriteData;
+            PaletteOffset: Byte
+);
+var
+   i: Byte;
 begin
+     for i := 0 to 255 do
+         if TheImage[i] <> 0 then
+            TheImage[i] := TheImage[i] + PaletteOffset;
+
      Sprite.Init(InitialX, InitialY, TheImage);
      Direction := -1;
 end;
@@ -331,12 +413,12 @@ begin
              DrawTile(X * 8, Y * 8, Tile[Map[Y * 40 + X]]);
 end;
 
-function EnemyInstance(X, Y: Word): PSprite;
+function EnemyInstance(X, Y: Word; PaletteOffset: Byte): PSprite;
 var
    EnemyObj: ^Enemy;
 begin
      New(EnemyObj);
-     EnemyObj^.Init(X, Y, MartyImage);
+     EnemyObj^.Init(X, Y, MartyImage, PaletteOffset);
 
      EnemyInstance := EnemyObj;
 end;
@@ -364,19 +446,19 @@ begin
      Marty.Init(100, 166, MartyImage);
 
      Sprites[0] := @Marty;
-     Sprites[1] := EnemyInstance(300, 166);
-     Sprites[2] := EnemyInstance(10, 166);
+     Sprites[1] := EnemyInstance(300, 166, 2);
+     Sprites[2] := EnemyInstance(10, 166, 4);
 
      while Running do
      begin
-          for i := 0 to 2 do
+          for i := 0 to NumSprites do
               Sprites[i]^.Draw;
 
           WaitForVRetrace;
 
           UpdateScreen;
 
-          for i := 0 to 2 do
+          for i := 0 to NumSprites do
               RedrawMapParts(Sprites[i]);
 
           if KeyPressed then
@@ -391,7 +473,7 @@ begin
                end;
           end;
 
-          for i := 0 to 2 do
+          for i := 0 to NumSprites do
               Sprites[i]^.Update;
      end;
 
