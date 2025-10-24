@@ -1,23 +1,32 @@
 program BackToThePascal;
 uses Crt, Strings;
 
+const
+     MaxSprites = 100;
+
 type
     VideoBuffer = Array[0..63999] of Byte;
     SpriteData = Array[0..255] of Byte;
+    SpriteImages = Array[0..2] of Pointer;
 
     Sprite = object
-           constructor Init(InitialX, InitialY: Word; TheImage: SpriteData);
+           constructor Init(
+                       InitialX, InitialY: Word;
+                       SpriteWidth, SpriteHeight: Byte;
+                       TheImages: SpriteImages
+           );
 
            public
                  X, Y: Word;
+                 Width, Height: Byte;
                  procedure SetPosition(NewX, NewY: Word);
                  procedure Draw;
-                 procedure Erase;
                  procedure Update; virtual;
            private
-                  PrevX, PrevY: Word;
-                  Image: SpriteData;
-                  Background: SpriteData;
+                  Images: SpriteImages;
+                  CurrentImage: Byte;
+                  Frames: Word;
+                  Animating: Boolean;
     end;
 
     MartySprite = object(Sprite)
@@ -40,26 +49,42 @@ type
                 public
                       constructor Init(
                                   InitialX, InitialY: Word;
-                                  TheImage: SpriteData;
+                                  TheImages: SpriteImages;
                                   PaletteOffset: Byte
                       );
                       procedure Update; virtual;
     end;
 
+    AnimatedTile = object(Sprite)
+                public
+                      procedure Update; virtual;
+
+    end;
+
     PSprite = ^Sprite;
+
+    SpriteCollection = object
+            private
+                   Sprites: Array[0..MaxSprites] of PSprite;
+                   NumberOfSprites: Byte;
+            public
+                  constructor Init;
+                  procedure Add(Sprite: PSprite);
+                  procedure Draw;
+                  procedure Update;
+                  procedure Erase;
+    end;
+
 
 const
      ScreenWidth = 320;
      ScreenHeight = 200;
-     SpriteWidth = 16;
-     SpriteHeight = 16;
      TileWidth = 8;
      TileHeight = 8;
      MapWidth = 40;
      MapHeight = 25;
-     NumSprites = 0;
 
-     MartyImage: SpriteData = (
+     MartyImage1: SpriteData = (
              $00, $00, $00, $00, $00, $72, $72, $72, $72, $72, $00, $00, $00, $00, $00, $00,
              $00, $00, $00, $00, $00, $72, $72, $72, $72, $72, $00, $00, $00, $00, $00, $00,
              $00, $00, $00, $00, $00, $72, $72, $59, $1f, $59, $00, $00, $00, $00, $00, $00,
@@ -78,53 +103,128 @@ const
              $00, $00, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $00, $00
      );
 
+     MartyImage2: SpriteData = (
+             $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $72, $72, $72, $72, $72, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $72, $72, $72, $72, $72, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $72, $72, $59, $1f, $59, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $72, $59, $59, $59, $59, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $00, $59, $59, $59, $00, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $15, $04, $04, $28, $28, $04, $04, $15, $00, $00, $00, $00,
+             $00, $00, $00, $15, $15, $04, $15, $28, $28, $15, $04, $15, $15, $00, $00, $00,
+             $00, $59, $59, $15, $15, $04, $04, $28, $28, $04, $04, $15, $15, $59, $59, $00,
+             $00, $00, $00, $00, $00, $04, $04, $28, $28, $04, $04, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $15, $15, $28, $28, $15, $15, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $09, $09, $09, $09, $09, $09, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $09, $09, $00, $00, $09, $09, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $1c, $1c, $00, $00, $1c, $1c, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $1e, $1e, $00, $00, $1e, $1e, $00, $00, $00, $00, $00,
+             $00, $00, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $00, $00
+     );
+
+     MartyImage3: SpriteData = (
+             $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $72, $72, $72, $72, $72, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $72, $72, $72, $72, $72, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $72, $72, $59, $1f, $59, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $72, $59, $59, $59, $59, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $00, $59, $59, $59, $00, $00, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $15, $04, $04, $28, $28, $04, $04, $15, $00, $00, $00, $00,
+             $00, $00, $00, $15, $15, $04, $15, $28, $28, $15, $04, $15, $15, $00, $00, $00,
+             $00, $59, $59, $15, $15, $04, $04, $28, $28, $04, $04, $15, $15, $59, $59, $00,
+             $00, $00, $00, $00, $00, $04, $04, $28, $28, $04, $04, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $15, $15, $28, $28, $15, $15, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $09, $09, $09, $09, $09, $09, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $1c, $1c, $00, $00, $1c, $1c, $00, $00, $00, $00, $00,
+             $00, $00, $00, $00, $00, $1e, $1e, $00, $00, $1e, $1e, $00, $00, $00, $00, $00,
+             $00, $00, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $26, $00, $00
+     );
+
+     Water1: Array[0..63] of Byte = (
+             $37,$36,$35,$34,$33,$34,$35,$36,
+             $36,$35,$34,$33,$34,$35,$36,$37,
+             $35,$34,$33,$34,$35,$36,$37,$36,
+             $34,$33,$34,$35,$36,$37,$36,$35,
+             $33,$34,$35,$36,$37,$36,$35,$34,
+             $34,$35,$36,$37,$36,$35,$34,$33,
+             $35,$36,$37,$36,$35,$34,$33,$34,
+             $36,$37,$36,$35,$34,$33,$34,$35
+     );
+
+     Water2: Array[0..63] of Byte = (
+             $36,$35,$34,$33,$34,$35,$36,$37,
+             $35,$34,$33,$34,$35,$36,$37,$36,
+             $34,$33,$34,$35,$36,$37,$36,$35,
+             $33,$34,$35,$36,$37,$36,$35,$34,
+             $34,$35,$36,$37,$36,$35,$34,$33,
+             $35,$36,$37,$36,$35,$34,$33,$34,
+             $36,$37,$36,$35,$34,$33,$34,$35,
+             $37,$36,$35,$34,$33,$34,$35,$36
+     );
+
+     Water3: Array[0..63] of Byte = (
+             $35,$34,$33,$34,$35,$36,$37,$36,
+             $34,$33,$34,$35,$36,$37,$36,$35,
+             $33,$34,$35,$36,$37,$36,$35,$34,
+             $34,$35,$36,$37,$36,$35,$34,$33,
+             $35,$36,$37,$36,$35,$34,$33,$34,
+             $36,$37,$36,$35,$34,$33,$34,$35,
+             $37,$36,$35,$34,$33,$34,$35,$36,
+             $36,$35,$34,$33,$34,$35,$36,$37
+     );
+
      Map: Array[0..(MapWidth * MapHeight)-1] of Byte = (
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1
      );
 
 var
    i: Word;
    Running: Boolean;
    Tile: Array[0..2] of Array[0..63] of Byte;
-   CurrentTile: Byte;
    Buffer: ^VideoBuffer;
    Marty: MartySprite;
    Key: Char;
-   Sprites: Array[0..2] of PSprite;
+   Sprites: SpriteCollection;
+   MartyImages: SpriteImages;
 
-function NextGroundYAt(X, Y: Word): Word;
+function NextGroundYAt(Sprite: PSprite): Word;
 var
    Txl, Txr, Ty: Byte;
+   X, Y: Word;
 begin
+     X := Sprite^.X;
+     Y := Sprite^.Y;
+
      Txl := X div TileWidth;
-     Txr := (X + SpriteWidth) div TileWidth;
+     Txr := (X + Sprite^.Width) div TileWidth;
      Ty := Y div TileHeight;
 
-     NextGroundYAt := ScreenHeight + SpriteHeight * 2;
+     NextGroundYAt := ScreenHeight + Sprite^.Height * 2;
 
      while Ty < MapHeight do
      begin
@@ -185,11 +285,19 @@ begin
      end;
 end;
 
-constructor Sprite.Init(InitialX, InitialY: Word; TheImage: SpriteData);
+constructor Sprite.Init(
+            InitialX, InitialY: Word;
+            SpriteWidth, SpriteHeight: Byte;
+            TheImages: SpriteImages
+);
 begin
      X := InitialX;
      Y := InitialY;
-     Image := TheImage;
+     Width := SpriteWidth;
+     Height := SpriteHeight;
+     Images := TheImages;
+     CurrentImage := 0;
+     Animating := false;
 end;
 
 procedure Sprite.Draw;
@@ -199,29 +307,15 @@ var
    Row: PChar;
    Video: PChar;
 begin
-     PrevX := X;
-     PrevY := Y;
-
-     CopyFromBuffer(@Background, X, Y, SpriteWidth, SpriteHeight);
-
-     for Ty := 0 to SpriteHeight - 1 do
-         for Tx := 0 to SpriteWidth - 1 do
+     for Ty := 0 to Height - 1 do
+         for Tx := 0 to Width - 1 do
          begin
-             Color := Image[Ty * SpriteWidth + Tx];
+             Color := Byte(Ptr(Seg(Images[CurrentImage]^), Ofs(Images[CurrentImage]^) + Ty * Width + Tx)^);
              Sx := X + Tx;
              Sy := Y + Ty;
-             if (Color <> 0) and (Sx > 0) and (Sx < ScreenWidth) and (Sy > 0) and (Sy < ScreenHeight) then
+             if (Color <> 0) and (Sx >= 0) and (Sx < ScreenWidth) and (Sy >= 0) and (Sy < ScreenHeight) then
                 PutPixel(Sx, Sy, Color);
          end;
-end;
-
-procedure Sprite.Erase;
-var
-   Tx, Ty: Byte;
-   Video: PChar;
-   Row: PChar;
-begin
-     CopyToBuffer(@Background, PrevX, PrevY, SpriteWidth, SpriteHeight);
 end;
 
 procedure Sprite.SetPosition(NewX, NewY: Word);
@@ -232,6 +326,16 @@ end;
 
 procedure Sprite.Update;
 begin
+     if Animating then
+     begin
+          Inc(Frames);
+
+          if Frames mod 3 = 0 then
+               CurrentImage := (CurrentImage + 1) mod 3;
+
+          if Frames > 9 then
+             Animating := false;
+     end;
 end;
 
 procedure MartySprite.Push(D: ShortInt);
@@ -239,6 +343,9 @@ begin
      Direction := D;
      PushCycle := 30;
      Speed := 4;
+     Animating := true;
+     Frames := 0;
+     CurrentImage := 0;
 end;
 
 procedure MartySprite.Ollie;
@@ -257,9 +364,11 @@ var
    Txl, Txr, Tyt, Tyb, Ty: Byte;
    Collision: Boolean;
 begin
+     Sprite.Update;
+
      NextX := X;
      NextY := Y;
-     GroundY := NextGroundYAt(X, Y) - SpriteHeight - 2;
+     GroundY := NextGroundYAt(@self) - Height - 2;
 
      if OllieCycle > 0 then
      begin
@@ -288,9 +397,9 @@ begin
      end;
 
      Txl := NextX div TileWidth;
-     Txr := (NextX + SpriteWidth) div TileWidth;
+     Txr := (NextX + Width) div TileWidth;
      Tyt := NextY div TileHeight;
-     Tyb := (NextY + SpriteHeight) div TileHeight;
+     Tyb := (NextY + Height) div TileHeight;
 
      Collision := false;
      for Ty := Tyt to Tyb do
@@ -313,35 +422,35 @@ begin
         NextY := GroundY;
 
      Y := NextY;
-
-     {if (X <= 0) or ((X + SpriteWidth) > ScreenWidth) then
-     begin
-          PushCycle := 0;
-     end;}
 end;
 
 constructor Enemy.Init(
             InitialX, InitialY: Word;
-            TheImage: SpriteData;
+            TheImages: SpriteImages;
             PaletteOffset: Byte
 );
-var
-   i: Byte;
 begin
-     for i := 0 to 255 do
-         if TheImage[i] <> 0 then
-            TheImage[i] := TheImage[i] + PaletteOffset;
-
-     Sprite.Init(InitialX, InitialY, TheImage);
+     Sprite.Init(InitialX, InitialY, 16, 16, TheImages);
      Direction := -1;
 end;
 
 procedure Enemy.Update;
 begin
+     Animating := true;
+
+     Sprite.Update;
+
      X := X + Direction;
 
-     if (X <= 0) or ((X + SpriteWidth) > ScreenWidth) then
+     if (X <= 0) or ((X + Width) > ScreenWidth) then
         Direction := Direction * -1;
+end;
+
+procedure AnimatedTile.Update;
+begin
+     Animating := true;
+
+     Sprite.Update;
 end;
 
 procedure SetVideoMode(Mode: Byte);
@@ -418,9 +527,62 @@ var
    EnemyObj: ^Enemy;
 begin
      New(EnemyObj);
-     EnemyObj^.Init(X, Y, MartyImage, PaletteOffset);
+     EnemyObj^.Init(X, Y, MartyImages, PaletteOffset);
 
      EnemyInstance := EnemyObj;
+end;
+
+function WaterInstance(X, Y: Word): PSprite;
+var
+   Water: ^AnimatedTile;
+   WaterImages: SpriteImages;
+begin
+     WaterImages[0] := @Water1;
+     WaterImages[1] := @Water2;
+     WaterImages[2] := @Water3;
+
+     New(Water);
+     Water^.Init(X, Y, 8, 8, WaterImages);
+
+     WaterInstance := Water;
+end;
+
+constructor SpriteCollection.Init;
+begin
+     NumberOfSprites := 0;
+end;
+
+procedure SpriteCollection.Add(Sprite: PSprite);
+begin
+     Sprites[NumberOfSprites] := Sprite;
+     Inc(NumberOfSprites);
+end;
+
+procedure SpriteCollection.Draw;
+var
+   i: Byte;
+begin
+     if NumberOfSprites > 0 then
+          for i := 0 to NumberOfSprites - 1 do
+                   Sprites[i]^.Draw;
+end;
+
+procedure SpriteCollection.Update;
+var
+   i: Byte;
+begin
+     if NumberOfSprites > 0 then
+          for i := 0 to NumberOfSprites - 1 do
+              Sprites[i]^.Update;
+end;
+
+procedure SpriteCollection.Erase;
+var
+   i: Byte;
+begin
+     if NumberOfSprites > 0 then
+          for i := 0 to NumberOfSprites - 1 do
+              RedrawMapParts(Sprites[i]);
 end;
 
 begin
@@ -439,27 +601,31 @@ begin
 
      Running := true;
 
-     CurrentTile := 0;
-
      DrawMap;
 
-     Marty.Init(100, 166, MartyImage);
+     MartyImages[0] := @MartyImage1;
+     MartyImages[1] := @MartyImage2;
+     MartyImages[2] := @MartyImage3;
 
-     Sprites[0] := @Marty;
-     Sprites[1] := EnemyInstance(300, 166, 2);
-     Sprites[2] := EnemyInstance(10, 166, 4);
+     Marty.Init(100, 166, 16, 16, MartyImages);
+
+     Sprites.Init;
+     Sprites.Add(@Marty);
+     Sprites.Add(EnemyInstance(300, 14, 2));
+     Sprites.Add(EnemyInstance(10, 54, 4));
+
+     for i := 0 to 14 do
+         Sprites.Add(WaterInstance(136 + i * 8, 192));
 
      while Running do
      begin
-          for i := 0 to NumSprites do
-              Sprites[i]^.Draw;
+          Sprites.Draw;
 
           WaitForVRetrace;
 
           UpdateScreen;
 
-          for i := 0 to NumSprites do
-              RedrawMapParts(Sprites[i]);
+          Sprites.Erase;
 
           if KeyPressed then
           begin
@@ -473,8 +639,7 @@ begin
                end;
           end;
 
-          for i := 0 to NumSprites do
-              Sprites[i]^.Update;
+          Sprites.Update;
      end;
 
      SetVideoMode(3);
