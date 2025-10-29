@@ -233,21 +233,21 @@ const
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
 0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,
-
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
      );
 
@@ -256,11 +256,13 @@ var
    Running: Boolean;
    Tile: Array[0..2] of Array[0..63] of Byte;
    Buffer: ^VideoBuffer;
+   MapBuffer: ^VideoBuffer;
    Marty: MartySprite;
    Key: Char;
    Sprites: SpriteCollection;
    MartyImages: SpriteImages;
    MapStartX: Byte;
+   ScrollX: Word;
 
 function NextGroundYAt(Sprite: PSprite): Word;
 var
@@ -392,7 +394,7 @@ procedure MartySprite.Push(D: ShortInt);
 begin
      Direction := D;
      PushCycle := 30;
-     Speed := 4;
+     Speed := 2;
      Animating := true;
      Frames := 0;
      CurrentImage := 0;
@@ -524,9 +526,19 @@ end;
 
 procedure UpdateScreen;
 var
+   Y: Byte;
    Video: Array[0..63999] of Byte absolute $a000:$0000;
+   Source, Dest: Pointer;
+   XOffset: Word;
 begin
-     Move(Buffer^, Video, 64000);
+     XOffset := ScrollX mod TileWidth;
+
+     for Y := 0 to ScreenHeight - 1 do
+     begin
+          Source := Ptr(Seg(Buffer^), Ofs(Buffer^) + Y * ScreenWidth + XOffset);
+          Dest := Ptr(Seg(Video), Ofs(Video) + Y * ScreenWidth + TileWidth);
+          Move(Source^, Dest^, 304);
+     end;
 end;
 
 procedure WaitForVRetrace;
@@ -572,6 +584,49 @@ begin
          for X := StartX to EndX do
              DrawTile(X * TileWidth, Y * TileHeight, Tile[Map[Y * MapWidth + X]]);
 end;
+
+procedure UpdateMap;
+var
+   Y: Byte;
+   Source, Dest: Pointer;
+   NextMapStartX, TileOffset: Byte;
+   CopyWidth, SourceOffset, DestOffset, DrawPosition: Word;
+begin
+     NextMapStartX := ScrollX div TileWidth;
+
+     if MapStartX = NextMapStartX then exit;
+
+     MapStartX := NextMapStartX;
+
+     if ScrollX mod TileWidth = 0 then
+     begin
+          SourceOffset := TileWidth;
+          DestOffset := 0;
+          TileOffset := 39;
+     end
+     else
+     begin
+          SourceOffset := 0;
+          DestOffset := TileWidth;
+          TileOffset := 0;
+     end;
+
+     DrawPosition := TileOffset * TileWidth;
+     CopyWidth := ScreenWidth - TileWidth;
+
+     for Y := 0 to ScreenHeight do
+     begin
+          Source := Ptr(Seg(Buffer^), Ofs(Buffer^) + Y * ScreenWidth + SourceOffset);
+          Dest := Ptr(Seg(MapBuffer^), Ofs(MapBuffer^) + Y * ScreenWidth + DestOffset);
+          Move(Source^, Dest^, CopyWidth);
+     end;
+
+     Move(MapBuffer^, Buffer^, 64000);
+
+     for Y := 0 to MapHeight - 1 do
+         DrawTile(DrawPosition, Y * TileHeight, Tile[Map[Y * MapWidth + MapStartX + TileOffset]]);
+end;
+
 
 function EnemyInstance(X, Y: Word; PaletteOffset: Byte): PSprite;
 var
@@ -638,6 +693,7 @@ end;
 
 begin
      New(Buffer);
+     New(MapBuffer);
      SetVideoMode($13);
 
      for i := 0 to 63 do
@@ -663,11 +719,11 @@ begin
 
      Sprites.Init;
      Sprites.Add(@Marty);
-     Sprites.Add(EnemyInstance(300, 14, 2));
+     {Sprites.Add(EnemyInstance(300, 14, 2));
      Sprites.Add(EnemyInstance(10, 54, 4));
 
      for i := 0 to 14 do
-         Sprites.Add(WaterInstance(136 + i * 8, 192));
+         Sprites.Add(WaterInstance(136 + i * 8, 192));}
 
      while Running do
      begin
@@ -693,13 +749,11 @@ begin
 
           Sprites.Update;
 
-          if (Marty.X - MapStartX * TileWidth > ScreenWidth / 2) and (MapStartX < 40) then
-               Inc(MapStartX);
+          if Marty.X > ScreenWidth div 2
+             then ScrollX := Marty.X - ScreenWidth div 2
+             else ScrollX := 0;
 
-          if (Marty.X - MapStartX * TileWidth < ScreenWidth / 2) and (MapStartX > 0) then
-             Dec(MapStartX);
-
-          DrawMap;
+          UpdateMap;
      end;
 
      SetVideoMode(3);

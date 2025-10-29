@@ -13,8 +13,8 @@ const
      MapHeight = 25;
 
      Map: Array[0..(MapWidth * MapHeight)-1] of Byte = (
-1,0,1,1,0,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,2,
-1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,2,
+2,0,1,1,0,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,2,
+3,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,4,
 
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -92,12 +92,13 @@ const
 var
    i: Word;
    Running: Boolean;
-   Tile: Array[0..2] of Array[0..63] of Byte;
+   Tile: Array[0..4] of Array[0..63] of Byte;
    Buffer: ^VideoBuffer;
    MapBuffer: ^VideoBuffer;
    Key: Char;
    MapStartX: Byte;
    X: Word;
+   Direction: Integer;
 
 procedure CopyToBuffer(Source: Pointer; X, Y, Width, Height: Word);
 var
@@ -151,8 +152,8 @@ begin
      for Y := 0 to ScreenHeight - 1 do
      begin
           Source := Ptr(Seg(Buffer^), Ofs(Buffer^) + Y * ScreenWidth + XOffset);
-          Dest := Ptr(Seg(Video), Ofs(Video) + Y * ScreenWidth);
-          Move(Source^, Dest^, 312);
+          Dest := Ptr(Seg(Video), Ofs(Video) + Y * ScreenWidth + TileWidth);
+          Move(Source^, Dest^, 304);
      end;
 end;
 
@@ -169,25 +170,42 @@ procedure UpdateMap;
 var
    Y: Byte;
    Source, Dest: Pointer;
+   NextMapStartX, TileOffset: Byte;
+   CopyWidth, SourceOffset, DestOffset, DrawPosition: Word;
 begin
-     if (X mod TileWidth = 0) and (MapStartX <> X div TileWidth) then
+     NextMapStartX := X div TileWidth;
+
+     if MapStartX = NextMapStartX then exit;
+
+     MapStartX := NextMapStartX;
+
+     if X mod TileWidth = 0 then
      begin
-          MapStartX := X div TileWidth;
-
-          for Y := 0 to ScreenHeight do
-          begin
-               Source := Ptr(Seg(Buffer^), Ofs(Buffer^) + Y * ScreenWidth + TileWidth);
-               Dest := Ptr(Seg(MapBuffer^), Ofs(MapBuffer^) + Y * ScreenWidth);
-               Move(Source^, Dest^, 312);
-          end;
-
-          Move(MapBuffer^, Buffer^, 64000);
-
-          for Y := 0 to MapHeight - 1 do
-          begin
-               DrawTile(312, Y * TileHeight, Tile[Map[Y * MapWidth + MapStartX + 39]]);
-          end;
+          SourceOffset := TileWidth;
+          DestOffset := 0;
+          TileOffset := 39;
+     end
+     else
+     begin
+          SourceOffset := 0;
+          DestOffset := TileWidth;
+          TileOffset := 0;
      end;
+
+     DrawPosition := TileOffset * TileWidth;
+     CopyWidth := ScreenWidth - TileWidth;
+
+     for Y := 0 to ScreenHeight do
+     begin
+          Source := Ptr(Seg(Buffer^), Ofs(Buffer^) + Y * ScreenWidth + SourceOffset);
+          Dest := Ptr(Seg(MapBuffer^), Ofs(MapBuffer^) + Y * ScreenWidth + DestOffset);
+          Move(Source^, Dest^, CopyWidth);
+     end;
+
+     Move(MapBuffer^, Buffer^, 64000);
+
+     for Y := 0 to MapHeight - 1 do
+         DrawTile(DrawPosition, Y * TileHeight, Tile[Map[Y * MapWidth + MapStartX + TileOffset]]);
 end;
 
 begin
@@ -199,7 +217,9 @@ begin
      begin
          Tile[0][i] := 9;
          Tile[1][i] := 8;
-         Tile[2][i] := 0;
+         Tile[2][i] := 2;
+         Tile[3][i] := 4;
+         Tile[4][i] := 5;
      end;
 
      for i := 0 to 63999 do
@@ -209,6 +229,7 @@ begin
 
      X := 0;
      MapStartX := 0;
+     Direction := 1;
      DrawMap;
      UpdateMap;
 
@@ -227,7 +248,9 @@ begin
                end;
           end;
 
-          X := (X + 1) mod ScreenWidth;
+          X := X + Direction;
+          if (X > ScreenWidth + TileWidth * 2) or (X < 0) then
+             Direction := Direction * -1;
 
           UpdateMap;
      end;
