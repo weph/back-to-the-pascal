@@ -97,8 +97,10 @@ var
    MapBuffer: ^VideoBuffer;
    Key: Char;
    MapStartX: Byte;
-   X: Word;
+   X: Integer;
    Direction: Integer;
+   Auto: Boolean;
+   Speed: Byte;
 
 procedure CopyToBuffer(Source: Pointer; X, Y, Width, Height: Word);
 var
@@ -168,44 +170,51 @@ end;
 
 procedure UpdateMap;
 var
-   Y: Byte;
+   Cx, Cy: Byte;
    Source, Dest: Pointer;
-   NextMapStartX, TileOffset: Byte;
+   NextMapStartX, TileOffset, Columns: Byte;
    CopyWidth, SourceOffset, DestOffset, DrawPosition: Word;
 begin
      NextMapStartX := X div TileWidth;
 
      if MapStartX = NextMapStartX then exit;
 
-     MapStartX := NextMapStartX;
+     Columns := Abs(NextMapStartX - MapStartX);
 
-     if X mod TileWidth = 0 then
+     if NextMapStartX > MapStartX then
      begin
-          SourceOffset := TileWidth;
+          SourceOffset := Columns * TileWidth;
           DestOffset := 0;
-          TileOffset := 39;
+          TileOffset := 40 - Columns;
+          DrawPosition := TileOffset * TileWidth;
      end
      else
      begin
           SourceOffset := 0;
-          DestOffset := TileWidth;
-          TileOffset := 0;
+          DestOffset := Columns * TileWidth;
+          TileOffset := Columns;
+          DrawPosition := 0;
      end;
 
-     DrawPosition := TileOffset * TileWidth;
-     CopyWidth := ScreenWidth - TileWidth;
+     MapStartX := NextMapStartX;
 
-     for Y := 0 to ScreenHeight do
+     CopyWidth := ScreenWidth - Columns * TileWidth;
+
+     for i := 0 to 63999 do
+         MapBuffer^[i] := 0;
+
+     for Cy := 0 to ScreenHeight do
      begin
-          Source := Ptr(Seg(Buffer^), Ofs(Buffer^) + Y * ScreenWidth + SourceOffset);
-          Dest := Ptr(Seg(MapBuffer^), Ofs(MapBuffer^) + Y * ScreenWidth + DestOffset);
+          Source := Ptr(Seg(Buffer^), Ofs(Buffer^) + Cy * ScreenWidth + SourceOffset);
+          Dest := Ptr(Seg(MapBuffer^), Ofs(MapBuffer^) + Cy * ScreenWidth + DestOffset);
           Move(Source^, Dest^, CopyWidth);
      end;
 
      Move(MapBuffer^, Buffer^, 64000);
 
-     for Y := 0 to MapHeight - 1 do
-         DrawTile(DrawPosition, Y * TileHeight, Tile[Map[Y * MapWidth + MapStartX + TileOffset]]);
+     for Cy := 0 to MapHeight - 1 do
+         for Cx := 0 to Columns - 1 do
+             DrawTile(DrawPosition + Cx * TileWidth, Cy * TileHeight, Tile[Map[Cy * MapWidth + MapStartX + TileOffset + Cx]]);
 end;
 
 begin
@@ -230,7 +239,10 @@ begin
      X := 0;
      MapStartX := 0;
      Direction := 1;
+     Auto := false;
+     Speed := 3;
      DrawMap;
+     X := 100;
      UpdateMap;
 
      while Running do
@@ -243,14 +255,20 @@ begin
 
                case Key of
                     'q': Running := false;
-                    'a': Dec(X);
-                    'd': Inc(X);
+                    'a': Dec(X, Speed);
+                    'd': Inc(X, Speed);
+                    's': Auto := not Auto;
                end;
           end;
 
-          X := X + Direction;
-          if (X > ScreenWidth + TileWidth * 2) or (X < 0) then
-             Direction := Direction * -1;
+          if Auto then
+          begin
+             X := X + Speed * Direction;
+             if (X > ScreenWidth + TileWidth * 2) or (X < 0) then
+                Direction := Direction * -1;
+          end;
+
+          if X < 0 then X := 0;
 
           UpdateMap;
      end;

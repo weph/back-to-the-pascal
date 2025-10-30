@@ -238,16 +238,16 @@ const
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
      );
 
@@ -394,7 +394,7 @@ procedure MartySprite.Push(D: ShortInt);
 begin
      Direction := D;
      PushCycle := 30;
-     Speed := 2;
+     Speed := 4;
      Animating := true;
      Frames := 0;
      CurrentImage := 0;
@@ -587,44 +587,48 @@ end;
 
 procedure UpdateMap;
 var
-   Y: Byte;
+   Cx, Cy: Byte;
    Source, Dest: Pointer;
-   NextMapStartX, TileOffset: Byte;
+   NextMapStartX, TileOffset, Columns: Byte;
    CopyWidth, SourceOffset, DestOffset, DrawPosition: Word;
 begin
      NextMapStartX := ScrollX div TileWidth;
 
      if MapStartX = NextMapStartX then exit;
 
-     MapStartX := NextMapStartX;
+     Columns := Abs(NextMapStartX - MapStartX);
 
-     if ScrollX mod TileWidth = 0 then
+     if NextMapStartX > MapStartX then
      begin
-          SourceOffset := TileWidth;
+          SourceOffset := Columns * TileWidth;
           DestOffset := 0;
-          TileOffset := 39;
+          TileOffset := 40 - Columns;
+          DrawPosition := TileOffset * TileWidth;
      end
      else
      begin
           SourceOffset := 0;
-          DestOffset := TileWidth;
-          TileOffset := 0;
+          DestOffset := Columns * TileWidth;
+          TileOffset := Columns;
+          DrawPosition := 0;
      end;
 
-     DrawPosition := TileOffset * TileWidth;
-     CopyWidth := ScreenWidth - TileWidth;
+     MapStartX := NextMapStartX;
 
-     for Y := 0 to ScreenHeight do
+     CopyWidth := ScreenWidth - Columns * TileWidth;
+
+     for Cy := 0 to ScreenHeight - 1 do
      begin
-          Source := Ptr(Seg(Buffer^), Ofs(Buffer^) + Y * ScreenWidth + SourceOffset);
-          Dest := Ptr(Seg(MapBuffer^), Ofs(MapBuffer^) + Y * ScreenWidth + DestOffset);
+          Source := Ptr(Seg(Buffer^), Ofs(Buffer^) + Cy * ScreenWidth + SourceOffset);
+          Dest := Ptr(Seg(MapBuffer^), Ofs(MapBuffer^) + Cy * ScreenWidth + DestOffset);
           Move(Source^, Dest^, CopyWidth);
      end;
 
      Move(MapBuffer^, Buffer^, 64000);
 
-     for Y := 0 to MapHeight - 1 do
-         DrawTile(DrawPosition, Y * TileHeight, Tile[Map[Y * MapWidth + MapStartX + TileOffset]]);
+     for Cy := 0 to MapHeight - 1 do
+         for Cx := 0 to Columns - 1 do
+             DrawTile(DrawPosition + Cx * TileWidth, Cy * TileHeight, Tile[Map[Cy * MapWidth + MapStartX + TileOffset + Cx]]);
 end;
 
 
@@ -719,11 +723,11 @@ begin
 
      Sprites.Init;
      Sprites.Add(@Marty);
-     {Sprites.Add(EnemyInstance(300, 14, 2));
+     Sprites.Add(EnemyInstance(300, 14, 2));
      Sprites.Add(EnemyInstance(10, 54, 4));
 
      for i := 0 to 14 do
-         Sprites.Add(WaterInstance(136 + i * 8, 192));}
+         Sprites.Add(WaterInstance(136 + i * 8, 192));
 
      while Running do
      begin
