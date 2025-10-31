@@ -101,6 +101,7 @@ var
    Direction: Integer;
    Auto: Boolean;
    Speed: Byte;
+   Redraw: Boolean;
 
 procedure CopyToBuffer(Source: Pointer; X, Y, Width, Height: Word);
 var
@@ -200,8 +201,8 @@ begin
 
      CopyWidth := ScreenWidth - Columns * TileWidth;
 
-     for i := 0 to 63999 do
-         MapBuffer^[i] := 0;
+     {for i := 0 to 63999 do
+         MapBuffer^[i] := 0;}
 
      for Cy := 0 to ScreenHeight do
      begin
@@ -216,6 +217,35 @@ begin
          for Cx := 0 to Columns - 1 do
              DrawTile(DrawPosition + Cx * TileWidth, Cy * TileHeight, Tile[Map[Cy * MapWidth + MapStartX + TileOffset + Cx]]);
 end;
+
+procedure RedrawMapParts(Px, Py, ScrollX: Word);
+var
+   X, Y, StartX, StartY, EndX, EndY: Byte;
+   T: Byte;
+begin
+     StartX := (Px - ScrollX) div TileWidth;
+     StartY := Py div TileHeight;
+     EndX := StartX + 2;
+     EndY := StartY + 2;
+
+     if EndX > MapWidth - 1 then
+        EndX := MapWidth - 1;
+
+     if EndY > MapHeight - 1 then
+        EndY := MapHeight - 1;
+
+     for Y := StartY to EndY do
+         for X := 0 to 2 do
+         begin
+              if Redraw then
+                 T := Map[Y * MapWidth + (ScrollX div TileWidth) + (Px - ScrollX) div TileWidth + X]
+              else
+                  T := 4;
+
+              DrawTile((StartX + X) * TileWidth, Y * TileHeight, Tile[T]);
+         end;
+end;
+
 
 begin
      New(Buffer);
@@ -235,6 +265,7 @@ begin
          Buffer^[i] := 0;
 
      Running := true;
+     Redraw := false;
 
      X := 0;
      MapStartX := 0;
@@ -258,6 +289,10 @@ begin
                     'a': Dec(X, Speed);
                     'd': Inc(X, Speed);
                     's': Auto := not Auto;
+                    'r': begin
+                         RedrawMapParts(115, 150, X);
+                         Redraw := not Redraw;
+                    end;
                end;
           end;
 

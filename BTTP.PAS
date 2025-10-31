@@ -223,26 +223,26 @@ const
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
-1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+1,2,1,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 
-0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
 
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
 
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -263,6 +263,8 @@ var
    MartyImages: SpriteImages;
    MapStartX: Byte;
    ScrollX: Word;
+   MaxScrollX: Word;
+   TC: Byte;
 
 function NextGroundYAt(Sprite: PSprite): Word;
 var
@@ -520,7 +522,7 @@ var
    Video: PChar;
    Row: PChar;
 begin
-     if (X < ScreenWidth) then
+     if (X < ScreenWidth) and (Y < ScreenHeight) then
           CopyToBuffer(@Tile, X, Y, TileWidth, TileHeight);
 end;
 
@@ -567,22 +569,26 @@ end;
 
 procedure RedrawMapParts(S: PSprite);
 var
-   X, Y, StartX, StartY, EndX, EndY: Byte;
+   Tx, Ty, MapOffsetX, T: Byte;
+   TxStart, TxEnd: Byte;
+   TyStart, TyEnd: Byte;
 begin
-     StartX := (S^.X - MapStartX * TileWidth) div TileWidth;
-     StartY := S^.Y div TileHeight;
-     EndX := StartX + 2;
-     EndY := StartY + 2;
+     MapOffsetX := ScrollX div TileWidth;
 
-     if EndX > MapWidth - 1 then
-        EndX := MapWidth - 1;
+     TxStart := (S^.X - ScrollX) div TileWidth;
+     TxEnd := (S^.X + S^.Width - ScrollX) div TileWidth + 1;
 
-     if EndY > MapHeight - 1 then
-        EndY := MapHeight - 1;
+     TyStart := S^.Y div TileHeight;
+     TyEnd := (S^.Y + S^.Height) div TileHeight + 1;
 
-     for Y := StartY to EndY do
-         for X := StartX to EndX do
-             DrawTile(X * TileWidth, Y * TileHeight, Tile[Map[Y * MapWidth + X]]);
+     for Ty := TyStart to TyEnd do
+         for Tx := TxStart to TxEnd do
+         begin
+              T := Map[Ty * MapWidth + Tx + MapOffsetX];
+              {T := 2;}
+
+              DrawTile(Tx * TileWidth, Ty * TileHeight, Tile[T]);
+         end;
 end;
 
 procedure UpdateMap;
@@ -609,7 +615,7 @@ begin
      begin
           SourceOffset := 0;
           DestOffset := Columns * TileWidth;
-          TileOffset := Columns;
+          TileOffset := 0;
           DrawPosition := 0;
      end;
 
@@ -713,13 +719,16 @@ begin
      Running := true;
 
      MapStartX := 0;
+     MaxScrollX := (MapWidth + 2) * TileWidth - ScreenWidth;
+     ScrollX := 0;
+     TC := 1;
      DrawMap;
 
      MartyImages[0] := @MartyImage1;
      MartyImages[1] := @MartyImage2;
      MartyImages[2] := @MartyImage3;
 
-     Marty.Init(100, 166, 16, 16, MartyImages);
+     Marty.Init(10, 166, 16, 16, MartyImages);
 
      Sprites.Init;
      Sprites.Add(@Marty);
@@ -731,6 +740,14 @@ begin
 
      while Running do
      begin
+          if Marty.X > ScreenWidth div 2
+             then ScrollX := Marty.X - ScreenWidth div 2
+             else ScrollX := 0;
+
+          if ScrollX > MaxScrollX then ScrollX := MaxScrollX;
+
+          UpdateMap;
+
           Sprites.Draw;
 
           WaitForVRetrace;
@@ -748,16 +765,11 @@ begin
                     'w': Marty.Ollie;
                     'a': Marty.Push(-1);
                     'd': Marty.Push(1);
+                    't': TC := (TC + 1) mod 3;
                end;
           end;
 
           Sprites.Update;
-
-          if Marty.X > ScreenWidth div 2
-             then ScrollX := Marty.X - ScreenWidth div 2
-             else ScrollX := 0;
-
-          UpdateMap;
      end;
 
      SetVideoMode(3);
