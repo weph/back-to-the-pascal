@@ -31,6 +31,7 @@ type
                    destructor Destroy;
                    function Width: Word;
                    function Height: Word;
+                   function SpriteAt(X, Y, SpriteWidth, SpriteHeight: Word): PChar;
     end;
 
 implementation
@@ -89,6 +90,24 @@ end;
 function PcxImage.Height;
 begin
      Height := Header.SourceHeight;
+end;
+
+function PcxImage.SpriteAt(X, Y, SpriteWidth, SpriteHeight: Word): PChar;
+var
+   Xp, Yp, i: Word;
+   Sprite: PChar;
+begin
+     GetMem(Sprite, SpriteWidth * SpriteHeight);
+
+     i := 0;
+     for Yp := Y to Y + SpriteHeight - 1 do
+         for Xp := X to X + SpriteWidth - 1 do
+         begin
+             Sprite[i] := Data[Yp * Width + Xp];
+             Inc(i);
+         end;
+
+     SpriteAt := Sprite;
 end;
 
 begin
