@@ -7,13 +7,14 @@ const
 type
     VideoBuffer = Array[0..63999] of Byte;
     SpriteData = Array[0..255] of Byte;
-    SpriteImages = Array[0..2] of Pointer;
+    SpriteImages = Array[0..255] of Pointer;
 
     Sprite = object
            constructor Init(
                        InitialX, InitialY: Word;
                        SpriteWidth, SpriteHeight: Byte;
-                       TheImages: SpriteImages
+                       TheImages: SpriteImages;
+                       TheImagesLength: Byte
            );
 
            public
@@ -24,6 +25,7 @@ type
                  procedure Update; virtual;
            private
                   Images: SpriteImages;
+                  ImagesLength: Byte;
                   CurrentImage: Byte;
                   Frames: Word;
                   Animating: Boolean;
@@ -50,6 +52,7 @@ type
                       constructor Init(
                                   InitialX, InitialY: Word;
                                   TheImages: SpriteImages;
+                                  TheImagesLength: Byte;
                                   PaletteOffset: Byte
                       );
                       procedure Update; virtual;
@@ -57,6 +60,13 @@ type
 
     AnimatedTile = object(Sprite)
                 public
+                      constructor Init(
+                                  InitialX, InitialY: Word;
+                                  TheImages: SpriteImages;
+                                  TheImagesLength: Byte;
+                                  AnimationOffset: Byte
+                      );
+
                       procedure Update; virtual;
 
     end;
@@ -82,39 +92,6 @@ const
      ScreenHeight = 200;
      TileWidth = 8;
      TileHeight = 8;
-
-     Water1: Array[0..63] of Byte = (
-             $37,$36,$35,$34,$33,$34,$35,$36,
-             $36,$35,$34,$33,$34,$35,$36,$37,
-             $35,$34,$33,$34,$35,$36,$37,$36,
-             $34,$33,$34,$35,$36,$37,$36,$35,
-             $33,$34,$35,$36,$37,$36,$35,$34,
-             $34,$35,$36,$37,$36,$35,$34,$33,
-             $35,$36,$37,$36,$35,$34,$33,$34,
-             $36,$37,$36,$35,$34,$33,$34,$35
-     );
-
-     Water2: Array[0..63] of Byte = (
-             $36,$35,$34,$33,$34,$35,$36,$37,
-             $35,$34,$33,$34,$35,$36,$37,$36,
-             $34,$33,$34,$35,$36,$37,$36,$35,
-             $33,$34,$35,$36,$37,$36,$35,$34,
-             $34,$35,$36,$37,$36,$35,$34,$33,
-             $35,$36,$37,$36,$35,$34,$33,$34,
-             $36,$37,$36,$35,$34,$33,$34,$35,
-             $37,$36,$35,$34,$33,$34,$35,$36
-     );
-
-     Water3: Array[0..63] of Byte = (
-             $35,$34,$33,$34,$35,$36,$37,$36,
-             $34,$33,$34,$35,$36,$37,$36,$35,
-             $33,$34,$35,$36,$37,$36,$35,$34,
-             $34,$35,$36,$37,$36,$35,$34,$33,
-             $35,$36,$37,$36,$35,$34,$33,$34,
-             $36,$37,$36,$35,$34,$33,$34,$35,
-             $37,$36,$35,$34,$33,$34,$35,$36,
-             $36,$35,$34,$33,$34,$35,$36,$37
-     );
 
 var
    i: Word;
@@ -181,7 +158,8 @@ end;
 constructor Sprite.Init(
             InitialX, InitialY: Word;
             SpriteWidth, SpriteHeight: Byte;
-            TheImages: SpriteImages
+            TheImages: SpriteImages;
+            TheImagesLength: Byte
 );
 begin
      X := InitialX;
@@ -189,6 +167,7 @@ begin
      Width := SpriteWidth;
      Height := SpriteHeight;
      Images := TheImages;
+     ImagesLength := TheImagesLength;
      CurrentImage := 0;
      Animating := false;
 end;
@@ -224,9 +203,9 @@ begin
           Inc(Frames);
 
           if Frames mod 3 = 0 then
-               CurrentImage := (CurrentImage + 1) mod 3;
+               CurrentImage := (CurrentImage + 1) mod ImagesLength;
 
-          if Frames > 9 then
+          if Frames > 3 * ImagesLength then
              Animating := false;
      end;
 end;
@@ -320,23 +299,55 @@ end;
 constructor Enemy.Init(
             InitialX, InitialY: Word;
             TheImages: SpriteImages;
+            TheImagesLength: Byte;
             PaletteOffset: Byte
 );
 begin
-     Sprite.Init(InitialX, InitialY, 16, 16, TheImages);
+     inherited Init(InitialX, InitialY, 16, 16, TheImages, TheImagesLength);
+
      Direction := -1;
 end;
 
 procedure Enemy.Update;
+var
+   NextX, GroundY, CollisionX: Word;
 begin
      Animating := true;
 
      Sprite.Update;
 
-     X := X + Direction;
+     GroundY := TheMap^.NextGroundYAt(X, X + Width, Y) - Height - 2;
+     if Y < GroundY then
+     begin
+          Inc(Y);
 
-     if (X <= 0) or ((X + Width) > ScreenWidth) then
+          if Y > GroundY then
+             Y := GroundY;
+
+          Exit;
+     end;
+
+     NextX := X + Direction * 2;
+     CollisionX := NextX;
+     if Direction = 1 then
+        Inc(CollisionX, Width);
+
+     if (TheMap^.TileAt(CollisionX div TileWidth, Y div TileHeight) = 0) then
+        X := NextX
+     else
         Direction := Direction * -1;
+end;
+
+constructor AnimatedTile.Init(
+            InitialX, InitialY: Word;
+            TheImages: SpriteImages;
+            TheImagesLength: Byte;
+            AnimationOffset: Byte
+);
+begin
+     inherited Init(InitialX, InitialY, 8, 8, TheImages, TheImagesLength);
+
+     CurrentImage := AnimationOffset;
 end;
 
 procedure AnimatedTile.Update;
@@ -489,7 +500,7 @@ begin
 
      Dispose(SpriteSheet, Destroy);
 
-     New(Marty, Init(X, Y, 16, 16, Images));
+     New(Marty, Init(X, Y, 16, 16, Images, 3));
 
      MartyInstance := Marty;
 end;
@@ -509,22 +520,22 @@ begin
 
      Dispose(SpriteSheet, Destroy);
 
-     New(EnemyObj, Init(X, Y, Images, PaletteOffset));
+     New(EnemyObj, Init(X, Y, Images, 3, PaletteOffset));
 
      EnemyInstance := EnemyObj;
 end;
 
-function WaterInstance(X, Y: Word): PSprite;
+function WaterInstance(X, Y: Word; AnimationOffset: Byte): PSprite;
 var
    Water: ^AnimatedTile;
    WaterImages: SpriteImages;
 begin
-     WaterImages[0] := @Water1;
-     WaterImages[1] := @Water2;
-     WaterImages[2] := @Water3;
+     WaterImages[0] := TilesImage^.SpriteAt(0, 16, TileWidth, TileHeight);
+     WaterImages[1] := TilesImage^.SpriteAt(8, 16, TileWidth, TileHeight);
+     WaterImages[2] := TilesImage^.SpriteAt(16, 16, TileWidth, TileHeight);
+     WaterImages[3] := TilesImage^.SpriteAt(24, 16, TileWidth, TileHeight);
 
-     New(Water);
-     Water^.Init(X, Y, 8, 8, WaterImages);
+     New(Water, Init(X, Y, WaterImages, 4, AnimationOffset));
 
      WaterInstance := Water;
 end;
@@ -602,7 +613,7 @@ begin
      Sprites.Add(EnemyInstance(10, 54, 4));
 
      for i := 0 to 14 do
-         Sprites.Add(WaterInstance(136 + i * 8, 192));
+         Sprites.Add(WaterInstance(136 + i * TileWidth, 192, i mod 4));
 
      while Running do
      begin
