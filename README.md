@@ -14,10 +14,19 @@
 
 ## Week 2: Making the Map Scroll
 
-[![Pixels, Tiles, Sprites - Week 1 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week2.jpg)](https://youtu.be/K-NcPQuWFrE?si=hiXmURFr8YdlsF-w)
+[![Making the Map Scroll -  Week 2 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week2.jpg)](https://youtu.be/K-NcPQuWFrE?si=hiXmURFr8YdlsF-w)
 
 - [Monday](https://github.com/weph/back-to-the-pascal/tree/week2-monday)
 - [Tuesday](https://github.com/weph/back-to-the-pascal/tree/week2-tuesday)
 - [Wednesday](https://github.com/weph/back-to-the-pascal/tree/week2-wednesday)
 - [Thursday](https://github.com/weph/back-to-the-pascal/tree/week2-thursday)
 - [Friday](https://github.com/weph/back-to-the-pascal/tree/week2-friday)
+
+## Week 3: Loading images, tiles, and maps
+
+[![Loading images, tiles, and maps - Week 3 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week3.jpg)](https://youtu.be/VXTW_LACuV8?si=TMThSpPvb3ue9xib)
+
+- [Tuesday](https://github.com/weph/back-to-the-pascal/tree/week3-tuesday)
+- [Wednesday](https://github.com/weph/back-to-the-pascal/tree/week3-wednesday)
+- [Thursday](https://github.com/weph/back-to-the-pascal/tree/week3-thursday)
+- [Friday](https://github.com/weph/back-to-the-pascal/tree/week3-friday)
