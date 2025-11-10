@@ -1,5 +1,11 @@
 # Back to the Pascal
 
+Back to the Pascal is a little project of mine, where I'm trying to build a game in Turbo Pascal on a 386DX-40.
+I'm documenting my progress in a [weekly video series on YouTube][Playlist] and sharing the code here on GitHub so
+people can follow along, or maybe even use it as a starting point for their own game somwhere down the line.
+
+If you wanna learn more about the backstory and why I'm doing this, check out this video:
+
 [![Finishing the Game I Started 35 Years Ago](https://weph.dev/back-to-the-pascal/yt-bttp.jpg)](https://youtu.be/EeAz5rUbE9A?si=0SKSxopTKj27Nlnk)
 
 ## Week 1: Pixels, Tiles, Sprites
@@ -14,7 +20,7 @@
 
 ## Week 2: Making the Map Scroll
 
-[![Making the Map Scroll -  Week 2 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week2.jpg)](https://youtu.be/K-NcPQuWFrE?si=hiXmURFr8YdlsF-w)
+[![Making the Map Scroll - Week 2 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week2.jpg)](https://youtu.be/K-NcPQuWFrE?si=hiXmURFr8YdlsF-w)
 
 - [Monday](https://github.com/weph/back-to-the-pascal/tree/week2-monday)
 - [Tuesday](https://github.com/weph/back-to-the-pascal/tree/week2-tuesday)
@@ -30,3 +36,5 @@
 - [Wednesday](https://github.com/weph/back-to-the-pascal/tree/week3-wednesday)
 - [Thursday](https://github.com/weph/back-to-the-pascal/tree/week3-thursday)
 - [Friday](https://github.com/weph/back-to-the-pascal/tree/week3-friday)
+
+[Playlist]: https://www.youtube.com/watch?v=EeAz5rUbE9A&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_
