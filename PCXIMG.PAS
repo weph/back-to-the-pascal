@@ -1,5 +1,6 @@
 unit PcxImg;
 
+
 interface
 
 type
@@ -33,6 +34,7 @@ type
                    function Height: Word;
                    function SpriteAt(X, Y, SpriteWidth, SpriteHeight: Word): PChar;
     end;
+
 
 implementation
 
