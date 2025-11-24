@@ -11,8 +11,7 @@ type
     Canvas = object
         private
             Memory: Pointer;
-
-            function PositionOf(X, Y: Word): Pointer; virtual;
+            Pointers: Array[0..1000] of Pointer;
 
         public
             CanvasWidth, CanvasHeight: Word;
@@ -34,9 +33,6 @@ type
         private
             NumberOfBlocks: Byte;
             MemBlocks: Array[Byte] of Pointer;
-            Pointers: Array[0..1000] of Pointer;
-
-            function PositionOf(X, Y: Word): Pointer; virtual;
 
         public
             constructor Init(Width, Height: Word);
@@ -45,9 +41,6 @@ type
 
     PMode13 = ^Mode13;
     Mode13 = object(Canvas)
-        private
-            function PositionOf(X, Y: Word): Pointer; virtual;
-
         public
             constructor Init;
             destructor Destroy; virtual;
@@ -76,6 +69,28 @@ uses Map;
 const
      MemoryBlockSize = 64000;
      MaxBlockSize = 64000;
+
+procedure Move(var Src, Dst; Size: Word);
+var
+   SrcSeg, SrcOfs, DstSeg, DstOfs, Count: Word;
+begin
+     asm
+        push ds
+        lds si, Src
+        les di, Dst
+        mov cx, Size
+        mov ax, cx
+        cld
+        shr cx, 2
+        db 66h
+        rep movsw
+        mov cl, al
+        and cl, 3
+        rep movsb
+        pop ds
+     end;
+end;
+
 
 function VGA;
 begin
@@ -125,19 +140,30 @@ end;
 constructor Canvas.New;
 var
    MemBlock: Pointer;
+   Y: Word;
+   P1, P2: Pointer;
 begin
      GetMem(MemBlock, TheWidth * TheHeight);
 
      Memory := MemBlock;
      CanvasWidth := TheWidth;
      CanvasHeight := TheHeight;
+
+     for Y := 0 to CanvasHeight - 1 do
+         Pointers[Y] := Ptr(Seg(Memory^), Ofs(Memory^) + Y * CanvasWidth);
 end;
 
 constructor Canvas.Using;
+var
+   Y: Word;
 begin
      Memory := TheMemory;
      CanvasWidth := TheWidth;
      CanvasHeight := TheHeight;
+
+     if Memory <> Nil then
+          for Y := 0 to CanvasHeight - 1 do
+              Pointers[Y] := Ptr(Seg(Memory^), Ofs(Memory^) + Y * CanvasWidth);
 end;
 
 destructor Canvas.Destroy;
@@ -147,31 +173,34 @@ begin
 end;
 
 procedure Canvas.PutPixel;
+var
+   Dst: Pointer;
 begin
      if (X < 0) or (Y < 0) or (X >= CanvasWidth) or (Y >= CanvasHeight) then
         Exit;
 
-     Move(Color, PositionOf(X, Y)^, 1);
+     Mem[Seg(Pointers[Y]^):Ofs(Pointers[Y]^) + X] := Color;
 end;
 
 procedure Canvas.Fill;
 var
    Y: Word;
-   Row: Pointer;
+   Src, Dst: Pointer;
 begin
-     GetMem(Row, CanvasWidth);
-     FillChar(Row^, CanvasWidth, Color);
+     GetMem(Src, CanvasWidth);
+     FillChar(Src^, CanvasWidth, Color);
 
-     for Y := 0 to CanvasHeight do
-         Move(Row^, PositionOf(0, Y)^, CanvasWidth);
+     for Y := 0 to CanvasHeight - 1 do
+         Move(Src^, Pointers[Y]^, CanvasWidth);
 
-     FreeMem(Row, CanvasWidth);
+     FreeMem(Src, CanvasWidth);
 end;
 
 procedure Canvas.Draw;
 var
    Ty, SrcSeg, SrcOfs: Word;
-   SrcRow: Pointer;
+   Dst: Pointer;
+   SrcRow, DstRow: Pointer;
 begin
      SrcSeg := Seg(Data^);
      SrcOfs := Ofs(Data^);
@@ -179,10 +208,13 @@ begin
      for Ty := 0 to Height - 1 do
      begin
           SrcRow := Ptr(SrcSeg, SrcOfs + Ty * Width);
+          Dst := Pointers[Y + Ty];
+          DstRow := Ptr(Seg(Dst^), Ofs(Dst^) + X);
 
-          Move(SrcRow^, PositionOf(X, Y + Ty)^, Width);
+          Move(SrcRow^, DstRow^, Width);
      end;
 end;
+
 
 procedure Canvas.DrawAlpha;
 var
@@ -203,20 +235,27 @@ end;
 
 procedure Canvas.CopyTo;
 begin
-     Move(PositionOf(0, 0)^, Target^.PositionOf(0, 0)^, CanvasWidth * CanvasHeight);
+     Move(Pointers[0]^, Target^.Pointers[0]^, CanvasWidth * CanvasHeight);
 end;
 
 procedure Canvas.CopyAreaTo;
 var
-   X, Y: Word;
+   Tx, Ty: Byte;
+   Video: PChar;
+   Row: PChar;
+   Src, Dst: Pointer;
+   SrcSeg, SrcOfs, DstSeg, DstOfs: Word;
 begin
-     for Y := 0 to SrcHeight - 1 do
-         Target^.Draw(DstX, DstY + Y, SrcWidth, 1, PositionOf(SrcX, SrcY + Y));
-end;
+     for Ty := 0 to SrcHeight - 1 do
+     begin
+          Src := Pointers[SrcY + Ty];
+          Dst := Target^.Pointers[DstY + Ty];
 
-function Canvas.PositionOf;
-begin
-     PositionOf := Ptr(Seg(Memory^), Ofs(Memory^) + Y * CanvasWidth + X);
+          Video := Ptr(Seg(Src^), Ofs(Src^) + SrcX);
+          Row := Ptr(Seg(Dst^), Ofs(Dst^) + DstX);
+
+          Move(Video^, Row^, SrcWidth);
+     end;
 end;
 
 procedure Canvas.Update;
@@ -238,11 +277,6 @@ begin
      SetVideoMode(3);
 end;
 
-function Mode13.PositionOf;
-begin
-     PositionOf := Ptr($a000, Y * 320 + X)
-end;
-
 constructor Buffer.Init;
 var
    i: Byte;
@@ -255,6 +289,8 @@ begin
      inherited Using(nil, Width, Height);
 
      RowsPerBlock := MaxBlockSize div Width;
+     if RowsPerBlock > Height then
+        RowsPerBlock := Height;
 
      CurrentBlock := 0;
      RowsCovered := 0;
@@ -288,17 +324,6 @@ begin
      RowsPerBlock := MaxBlockSize div CanvasWidth;
      for i := 0 to NumberOfBlocks do
          FreeMem(MemBlocks[i], RowsPerBlock * CanvasWidth);
-end;
-
-function Buffer.PositionOf;
-var
-   P: Pointer;
-   YOffset: Byte;
-   DstSeg, DstOfs: Word;
-begin
-     P := Pointers[Y];
-
-     PositionOf := Ptr(Seg(P^), Ofs(P^) + X);
 end;
 
 constructor BufferedCanvas.Init;

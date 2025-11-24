@@ -1,5 +1,5 @@
 program BackToThePascal;
-uses Crt, Strings, PcxImg, Map, Sprite, Screen, Player, Enemy, ATile;
+uses Crt, Strings, PcxImg, Map, Sprite, Screen, Player, Enemy, ATile, Debug;
 
 var
    i: Word;
@@ -11,8 +11,10 @@ var
    TheMap: ^GameMap;
    Video: PCanvas;
    ScrollX, ScrollY: Word;
+   Fps: FpsInfo;
 
 begin
+     Fps.Init(10);
      Video := DoubleBufferedVGA;
 
      New(TheMap, Init('map.txt', Video, 8, 8));
@@ -55,6 +57,8 @@ begin
           Sprites.Draw(ScrollX, ScrollY);
 
           Video^.Update;
+          Fps.Update;
+          Fps.Show;
 
           Sprites.RedrawBackground(ScrollX, ScrollY);
 

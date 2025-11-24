@@ -1,32 +1,31 @@
 program MapDemo;
-uses Screen, Map, Crt;
+uses Screen, Map, Crt, Debug;
 
 var
    TheMap: GameMap;
-   Buffer: Canvas;
-   VGA: Mode13;
-   Video: BufferedCanvas;
-   VScreen: Canvas;
+   MiniMap: PCanvas;
+   Video: PCanvas;
    Sx, Sy, Dx, Dy: Integer;
    Running: Boolean;
    Key: Char;
+   Fps: FpsInfo;
+   X, Y: Word;
 
 begin
-     VScreen.New(320, 200);
-     {Buffer.New(320, 200);}
-     VGA.Init;
+     MiniMap := InMemory(200, 120);
+     Video := DoubleBufferedVGA;
 
-     {Video.Init(@Buffer, @VGA);}
+     Fps.Init(10);
 
-     TheMap.Init('map.txt', @VScreen);
+     TheMap.Init('map.txt', MiniMap, 8, 8);
 
      {TheMap.Draw;}
 
      {Sx := 314;}
      Sx := 0;
-     Sy := 50;
-     Dx := 3;
-     Dy := 3;
+     Sy := 0;
+     Dx := 1;
+     Dy := 1;
      Running := True;
 
      TheMap.Draw(Sx, Sy);
@@ -35,15 +34,31 @@ begin
 
      while Running do
      begin
-          VScreen.CopyAreaTo(
+          Video^.Fill(0);
+          TheMap.MapCanvas.CopyAreaTo(
               0, 0,
-              VScreen.CanvasWidth, VScreen.CanvasHeight,
-              @VGA,
-              (VGA.CanvasWidth - VScreen.CanvasWidth) div 2,
-              (VGA.CanvasHeight - VScreen.CanvasHeight) div 2
-          );
+              TheMap.MapCanvas.CanvasWidth, TheMap.MapCanvas.CanvasHeight,
+              Video,
+              80 - (TheMap.PrevX mod 8),
+              40 - (TheMap.PrevY mod 8));
+
+          for X := 80 to 80 + MiniMap^.CanvasWidth - 1 do
+          begin
+              Video^.PutPixel(X, 40, 10);
+              Video^.PutPixel(X, 40 + MiniMap^.CanvasHeight - 1, 10);
+          end;
+
+          for Y := 40 to 40 + MiniMap^.CanvasHeight - 1 do
+          begin
+              Video^.PutPixel(80, Y, 10);
+              Video^.PutPixel(80 + MiniMap^.CanvasWidth - 1, Y, 10);
+          end;
+
           TheMap.Update(Sx, Sy);
-          {Video.Update;}
+          Video^.Update;
+
+          Fps.Update;
+          Fps.Show;
 
           if KeyPressed then
           begin
@@ -58,16 +73,16 @@ begin
                end;
           end;
 
-          if (Sx + Dx < 0) or (Sx + Dx > (TheMap.Width - VScreen.CanvasWidth)) then
+          if (Sx + Dx < 0) or (Sx + Dx > (TheMap.Width - MiniMap^.CanvasWidth)) then
              Dx := Dx * -1;
 
 
-          if (Sy + Dy < 0) or (Sy + Dy > (TheMap.Height - VScreen.CanvasHeight)) then
+          if (Sy + Dy < 0) or (Sy + Dy > (TheMap.Height - MiniMap^.CanvasHeight)) then
              Dy := Dy * -1;
 
           Inc(Sx, Dx);
           Inc(Sy, Dy);
      end;
 
-     VGA.Destroy;
+     Dispose(Video, Destroy);
 end.

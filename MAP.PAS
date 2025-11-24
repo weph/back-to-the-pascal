@@ -14,17 +14,17 @@ type
             private
                 WidthInColumns, HeightInRows: Word;
                 Screen: PCanvas;
-                MapCanvas: Buffer;
                 NumCanvasColumns, NumCanvasRows: Word;
                 Data: Array[0..MaxWidth * MaxHeight] of Byte;
                 Tile: Array[0..6] of PChar;
-                PrevX, PrevY: Word;
 
                 procedure DrawTiles(StartCol, EndCol, StartRow, EndRow, ColOffset, RowOffset: Word);
                 procedure BlitToScreen(X, Y: Word);
             public
                 Width, Height: Word;
                 TileWidth, TileHeight: Word;
+                PrevX, PrevY: Word;
+                MapCanvas: Buffer;
 
                 constructor Init(Filename: String; TheScreen: PCanvas; TWidth, THeight: Word);
                 function TileAt(X, Y: Word): Byte;
@@ -56,7 +56,7 @@ begin
 
      MapCanvas.Fill(0);
 
-     Assign(MapFile, 'map.txt');
+     Assign(MapFile, Filename);
      Reset(MapFile);
 
      Y := 0;
@@ -123,18 +123,14 @@ var
    Col, Row: Word;
    StartCol, StartRow: Word;
 begin
-     StartCol := X div TileWidth;
-     StartRow := Y div TileHeight;
-
-     for Row := 0 to NumCanvasRows - 1 do
-         for Col := 0 to NumCanvasColumns - 1 do
-             MapCanvas.Draw(
-                 Col * TileWidth,
-                 Row * TileHeight,
-                 TileWidth,
-                 TileHeight,
-                 Tile[TileAt(StartCol + Col, StartRow + Row)]
-             );
+     DrawTiles(
+         0,
+         NumCanvasColumns - 1,
+         0,
+         NumCanvasRows - 1,
+         X div TileWidth,
+         Y div TileHeight
+     );
 
      BlitToScreen(X, Y);
 end;
@@ -145,11 +141,12 @@ type
         Src, Dst, CopySize: Integer;
         StartTile: Integer;
         TileOffset: Integer;
-        NumTiles: Integer;
+        NumTilesStart: Integer;
+        NumTilesEnd: Integer;
         NeedsRedraw: Boolean;
     end;
 
-function UpdateInfoFor(Prev, Next, ScreenSize, BufferSize, TileSize: Word): PUpdateInfo;
+function UpdateInfoFor(Prev, Next, ScreenSize, BufferSize, TileSize: Integer): PUpdateInfo;
 var
    PrevStartTile, NextStartTile: Integer;
    PrevScroll, NextScroll: Integer;
@@ -162,34 +159,35 @@ begin
      NextStartTile := Next div TileSize;
 
      PrevScroll := Prev mod TileSize;
-     NextScroll := Next mod TileSize;
 
      CopyOffset := Abs(NextStartTile - PrevStartTile) * TileSize;
 
      if Prev < Next then
      begin
-         Result^.Src := CopyOffset - PrevScroll;
-         Result^.Dst := 0;
-         Result^.CopySize := ScreenSize - CopyOffset;
-         Result^.TileOffset := Result^.CopySize div TileSize;
+          Result^.Src := CopyOffset - PrevScroll;
+          Result^.Dst := 0;
      end
      else
      begin
-         Result^.Src := (TileSize - PrevScroll) mod TileSize;
-         Result^.Dst := CopyOffset;
-
-         if PrevScroll <> 0 then
-         begin
-             Inc(Result^.Dst, TileSize);
-             Dec(Result^.CopySize, TileSize);
-         end;
-
-         Result^.TileOffset := 0;
-         Result^.CopySize := ScreenSize - Result^.Dst + TileSize;
+          Result^.Src := -PrevScroll;
+          Result^.Dst := CopyOffset;
      end;
 
+     if Result^.Src < 0 then
+     begin
+          Inc(Result^.Src, TileSize);
+          Inc(Result^.Dst, TileSize);
+     end;
+
+     Result^.CopySize := ScreenSize - Result^.Src;
+     Dec(Result^.CopySize, Result^.CopySize mod TileSize);
+
+     if (Result^.Dst + Result^.CopySize > BufferSize) then
+        Result^.CopySize := BufferSize - Result^.Dst;
+
      Result^.StartTile := NextStartTile;
-     Result^.NumTiles := (BufferSize - Result^.CopySize) div TileSize;
+     Result^.NumTilesStart := Result^.Dst div TileSize;
+     Result^.NumTilesEnd := (BufferSize - Result^.Dst - Result^.CopySize) div TileSize;
      Result^.NeedsRedraw := PrevStartTile <> NextStartTile;
 
      UpdateInfoFor := Result;
@@ -198,6 +196,7 @@ end;
 procedure GameMap.Update;
 var
    XInfo, YInfo: PUpdateInfo;
+   XColumns: LongInt;
 begin
      if (X = PrevX) and (Y = PrevY) then
         Exit;
@@ -209,27 +208,48 @@ begin
      begin
          Screen^.CopyAreaTo(
              XInfo^.Src, YInfo^.Src,
-             XInfo^.CopySize, XInfo^.CopySize,
+             XInfo^.CopySize, YInfo^.CopySize,
              @MapCanvas,
              XInfo^.Dst, YInfo^.Dst
          );
 
-         if XInfo^.NumTiles > 0 then
+         if XInfo^.NumTilesStart > 0 then
             DrawTiles(
-                XInfo^.TileOffset,
-                XInfo^.TileOffset + XInfo^.NumTiles - 1,
+                0,
+                XInfo^.NumTilesStart - 1,
                 0,
                 NumCanvasRows - 1,
                 XInfo^.StartTile,
                 YInfo^.StartTile
             );
 
-         if YInfo^.NumTiles > 0 then
+         if XInfo^.NumTilesEnd > 0 then
+            DrawTiles(
+                NumCanvasColumns - XInfo^.NumTilesEnd,
+                NumCanvasColumns - 1,
+                0,
+                NumCanvasRows - 1,
+                XInfo^.StartTile,
+                YInfo^.StartTile
+            );
+
+         if YInfo^.NumTilesStart > 0 then
             DrawTiles(
                 0,
                 NumCanvasColumns - 1,
-                YInfo^.TileOffset,
-                YInfo^.TileOffset + YInfo^.NumTiles - 1,
+                0,
+                YInfo^.NumTilesStart - 1,
+                XInfo^.StartTile,
+                YInfo^.StartTile
+         );
+
+
+         if YInfo^.NumTilesEnd > 0 then
+            DrawTiles(
+                0,
+                NumCanvasColumns - 1,
+                NumCanvasRows - YInfo^.NumTilesEnd,
+                NumCanvasRows - 1,
                 XInfo^.StartTile,
                 YInfo^.StartTile
             );
