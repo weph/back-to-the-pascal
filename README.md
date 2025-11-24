@@ -43,4 +43,10 @@ If you wanna learn more about the backstory and why I'm doing this, check out th
 
 - [Friday](https://github.com/weph/back-to-the-pascal/tree/week4)
 
+## Week 5: Did My Abstraction Slow Everything Down?
+
+[![Did My Abstraction Slow Everything Down? - Week 5 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week5.jpg)](https://www.youtube.com/watch?v=xLAD8_8eNhw&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_)
+
+- [Friday](https://github.com/weph/back-to-the-pascal/tree/week5)
+
 [Playlist]: https://www.youtube.com/watch?v=EeAz5rUbE9A&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_
