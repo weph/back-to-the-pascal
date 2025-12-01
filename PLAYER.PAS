@@ -89,12 +89,13 @@ var
    GroundY, NextX, NextY: Word;
    Txl, Txr, Tyt, Tyb, Ty: Byte;
    Collision: Boolean;
+   InfoL, InfoR: TTileInfo;
 begin
      BaseSprite.Update(TheMap);
 
      NextX := X;
      NextY := Y;
-     GroundY := TheMap^.NextGroundYAt(X, X + Width, Y) - Height - 2;
+     GroundY := TheMap^.NextGroundYAt(X, X + Width, Y + Height) - Height - 2;
 
      if OllieCycle > 0 then
      begin
@@ -108,8 +109,9 @@ begin
      else if Y < GroundY then
      begin
           NextY := Y + 4;
-          {Y := Y + OllieSpeed;
-          Speed := 3;}
+
+          if NextY > GroundY then
+             NextY := GroundY;
      end;
 
      if PushCycle > 0 then
@@ -122,18 +124,27 @@ begin
           PushCycle := PushCycle - 1;
      end;
 
-     Txl := NextX div TheMap^.TileWidth;
-     Txr := (NextX + Width) div TheMap^.TileWidth;
-     Tyt := NextY div TheMap^.TileHeight;
-     Tyb := (NextY + Height) div TheMap^.TileHeight;
+     Txl := NextX;
+     Txr := NextX + Width;
+     Tyt := NextY;
+     Tyb := NextY + Height;
 
      Collision := false;
      for Ty := Tyt to Tyb do
-          if (TheMap^.TileAt(Txl, Ty) > 0) or (TheMap^.TileAt(Txr, Ty) > 0) then
-          begin
-               Collision := true;
-               Break;
-          end;
+     begin
+         TheMap^.GetTileInfo(Txl, Ty, InfoL);
+         TheMap^.GetTileInfo(Txr, Ty, InfoR);
+
+         if (InfoL.Solid) or (InfoR.Solid) then
+         begin
+              {if (NextY + Height > Tyb * TheMap^.TileHeight + InfoL.YOffset) or
+                 (NextY + Height > Tyb * TheMap^.TileHeight + InfoR.YOffset) then
+              begin}
+                  Collision := true;
+                  Break;
+              {end;}
+         end;
+     end;
 
      if not Collision then
      begin
@@ -143,9 +154,6 @@ begin
      begin
           OllieCycle := 0;
      end;
-
-     if NextY > GroundY then
-        NextY := GroundY;
 
      Y := NextY;
 end;

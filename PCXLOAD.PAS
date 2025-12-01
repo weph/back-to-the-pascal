@@ -7,7 +7,7 @@ var
    Video: PCanvas;
 
 begin
-     Video := VGA;
+     Video := VGACanvas;
 
      New(Image, Init('img\marty.pcx'));
      Sprite := Image^.SpriteAt(32, 0, 16, 16);
@@ -19,5 +19,5 @@ begin
 
      FreeMem(Sprite, SizeOf(Sprite));
      Dispose(Image, Destroy);
-     Dispose(VGA);
+     Dispose(Video, Destroy);
 end.

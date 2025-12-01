@@ -18,7 +18,7 @@ var
    end;
 
 begin
-     Video := DoubleBufferedVGA;
+     Video := DoubleBufferedVGACanvas;
 
      for i := 0 to NumStars do
      begin
@@ -26,7 +26,7 @@ begin
           Stars[i].Y := Random(Video^.CanvasHeight);
      end;
 
-     Background := InMemory(640, 200);
+     Background := InMemoryCanvas(640, 200);
      Image.Init('img\bg1.pcx');
      Background^.Draw(0, 0, Image.Width, Image.Height, Image.Data);
      Image.Destroy;

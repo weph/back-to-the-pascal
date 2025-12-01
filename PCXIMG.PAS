@@ -3,6 +3,8 @@ unit PcxImg;
 
 interface
 
+uses VGA;
+
 type
     PcxHeader = record
               HeaderField: Byte;
@@ -11,7 +13,7 @@ type
               PlaneBits: Byte;
               XMin, YMin, XMax, YMax: Word;
               XDpi, YDpi: Word;
-              EgaPalette: Array[0..47] of Byte;
+              EgaPalette: Array[0..15] of TColor;
               ReservedField: Byte;
               ColorPlanes: Byte;
               BytesPerPlane: Word;
@@ -23,9 +25,10 @@ type
     PcxImage = object
              private
                     DataLen: Word;
-                    Header: PcxHeader;
 
              public
+                   Header: PcxHeader;
+                   Palette: Array[0..255] of TColor;
                    Data: PChar;
 
                    constructor Init(Filename: String);
@@ -75,6 +78,9 @@ begin
               Inc(CurrentPos);
           end;
      end;
+
+     Seek(Image, FileSize(Image) - SizeOf(Palette));
+     BlockRead(Image, Palette, SizeOf(Palette));
 
      Close(Image);
 end;

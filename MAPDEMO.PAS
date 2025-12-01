@@ -12,8 +12,8 @@ var
    X, Y: Word;
 
 begin
-     MiniMap := InMemory(200, 120);
-     Video := DoubleBufferedVGA;
+     MiniMap := InMemoryCanvas(200, 120);
+     Video := DoubleBufferedVGACanvas;
 
      Fps.Init(10);
 

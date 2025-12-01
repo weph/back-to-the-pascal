@@ -1,5 +1,5 @@
 program CanvasDemo;
-uses Crt, Screen;
+uses Crt, Screen, VGA;
 
 procedure Fill(P: Pointer; C: Byte; S: Word);
 var
@@ -9,24 +9,8 @@ begin
          Move(C, Ptr(Seg(P^), Ofs(P^) + i)^, 1);
 end;
 
-procedure WaitForVRetrace;
-begin
-     asm
-        mov dx, 03dah
-        @wait_end:
-        in al, dx
-        test al, 8
-        jnz @wait_end
-        @wait_start:
-        in al, dx
-        test al, 8
-        jz @wait_start
-     end;
-end;
-
-
 var
-   VGA: Mode13;
+   VGAC: Mode13;
    B: Buffer;
    SB: Canvas;
    DB: BufferedCanvas;
@@ -36,10 +20,10 @@ var
    c: Byte;
 
 begin
-     VGA.Init;
+     VGAC.Init;
      B.Init(640, 400);
      SB.New(320, 200);
-     DB.Init(@VGA);
+     DB.Init(@VGAC);
 
      GetMem(Rect, 64000);
 
@@ -77,5 +61,5 @@ begin
 
      FreeMem(Rect, 64000);
      B.Destroy;
-     VGA.Destroy;
+     VGAC.Destroy;
 end.

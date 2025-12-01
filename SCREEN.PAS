@@ -56,15 +56,15 @@ type
             procedure Update; virtual;
     end;
 
-    function VGA: PCanvas;
-    function DoubleBufferedVGA: PBufferedCanvas;
-    function InMemory(Width, Height: LongInt): PCanvas;
+    function VGACanvas: PCanvas;
+    function DoubleBufferedVGACanvas: PBufferedCanvas;
+    function InMemoryCanvas(Width, Height: LongInt): PCanvas;
 
 
 
 implementation
 
-uses Map;
+uses VGA;
 
 const
      MemoryBlockSize = 64000;
@@ -92,49 +92,25 @@ begin
 end;
 
 
-function VGA;
+function VGACanvas;
 begin
-     VGA := New(PMode13, Init);
+     VGACanvas := New(PMode13, Init);
 end;
 
-function DoubleBufferedVGA;
+function DoubleBufferedVGACanvas;
 begin
-     DoubleBufferedVGA := New(PBufferedCanvas, Init(VGA));
+     DoubleBufferedVGACanvas := New(PBufferedCanvas, Init(VGACanvas));
 end;
 
-function InMemory;
+function InMemoryCanvas;
 var
    SmallCanvas: ^Canvas;
    BigCanvas: ^Buffer;
 begin
      if Width * Height > MaxBlockSize then
-         InMemory := New(PBuffer, Init(Width, Height))
+         InMemoryCanvas := New(PBuffer, Init(Width, Height))
      else
-         InMemory := New(PCanvas, New(Width, Height));
-end;
-
-procedure SetVideoMode(Mode: Byte);
-begin
-     asm
-        mov ah, 0
-        mov al, Mode
-        int 10h
-     end;
-end;
-
-procedure WaitForVRetrace;
-begin
-     asm
-        mov dx, 03dah
-        @wait_end:
-        in al, dx
-        test al, 8
-        jnz @wait_end
-        @wait_start:
-        in al, dx
-        test al, 8
-        jz @wait_start
-     end;
+         InMemoryCanvas := New(PCanvas, New(Width, Height));
 end;
 
 constructor Canvas.New;

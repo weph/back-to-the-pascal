@@ -15,24 +15,21 @@ var
 
 begin
      Fps.Init(10);
-     Video := DoubleBufferedVGA;
+     Video := DoubleBufferedVGACanvas;
 
-     New(TheMap, Init('map.txt', Video, 8, 8));
+     New(TheMap, Init('map.txt', Video, 'img\tiles2.pcx', 16, 16));
 
      Running := true;
 
      MaxScrollX := TheMap^.Width - Video^.CanvasWidth;
      MaxScrollY := TheMap^.Height - Video^.CanvasHeight;
 
-     Marty := MartyInstance(Video, 10, 166);
+     Marty := MartyInstance(Video, 20, 180);
 
      Sprites.Init;
      Sprites.Add(Marty);
-     Sprites.Add(EnemyInstance(Video, 300, 14, 2));
-     Sprites.Add(EnemyInstance(Video, 10, 54, 4));
-
-     for i := 0 to 14 do
-         Sprites.Add(WaterInstance(Video, 136 + i * TheMap^.TileWidth, 192, i mod 4));
+     {Sprites.Add(EnemyInstance(Video, 300, 14, 2));
+     Sprites.Add(EnemyInstance(Video, 20, 54, 4));}
 
      TheMap^.Draw(0, 0);
      while Running do
@@ -77,7 +74,6 @@ begin
           Sprites.Update(TheMap);
      end;
 
-     VGA^.Destroy;
-
+     Dispose(Video, Destroy);
      Dispose(TheMap);
 end.

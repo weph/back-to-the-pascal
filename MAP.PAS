@@ -2,13 +2,20 @@ unit Map;
 
 interface
 
-uses Screen, PcxImg;
+uses Screen, PcxImg, VGA;
 
 const
     MaxWidth = 200;
     MaxHeight = 100;
+    MaxTiles = 255;
 
 type
+    PTileInfo = ^TTileInfo;
+    TTileInfo = record
+        Solid: Boolean;
+        YOffset: Byte;
+    end;
+
     PGameMap = ^GameMap;
     GameMap = object
             private
@@ -16,8 +23,9 @@ type
                 Screen: PCanvas;
                 NumCanvasColumns, NumCanvasRows: Word;
                 Data: Array[0..MaxWidth * MaxHeight] of Byte;
-                Tile: Array[0..6] of PChar;
+                Tile: Array[0..MaxTiles] of PChar;
 
+                procedure LoadTiles(TilesFilename: String);
                 procedure DrawTiles(StartCol, EndCol, StartRow, EndRow, ColOffset, RowOffset: Word);
                 procedure BlitToScreen(X, Y: Word);
             public
@@ -26,8 +34,9 @@ type
                 PrevX, PrevY: Word;
                 MapCanvas: Buffer;
 
-                constructor Init(Filename: String; TheScreen: PCanvas; TWidth, THeight: Word);
+                constructor Init(Filename: String; TheScreen: PCanvas; TilesFilename: String; TWidth, THeight: Word);
                 function TileAt(X, Y: Word): Byte;
+                procedure GetTileInfo(X, Y: Word; var Info: TTileInfo);
                 function NextGroundYAt(XLeft, XRight, Y: Word): Word;
                 procedure Draw(X, Y: Word);
                 procedure Update(X, Y: Word);
@@ -43,7 +52,6 @@ var
    MapFile: Text;
    Line: String;
    X, Y: Word;
-   TilesImage: ^PcxImage;
 begin
      Screen := TheScreen;
 
@@ -81,14 +89,34 @@ begin
 
      Close(MapFile);
 
-     New(TilesImage, Init('img\tiles.pcx'));
-     Tile[0] := TilesImage^.SpriteAt(0, 0, TileWidth, TileHeight);
-     Tile[1] := TilesImage^.SpriteAt(0, 8, TileWidth, TileHeight);
-     Tile[2] := TilesImage^.SpriteAt(8, 8, TileWidth, TileHeight);
-     Tile[3] := TilesImage^.SpriteAt(16, 8, TileWidth, TileHeight);
-     Tile[4] := TilesImage^.SpriteAt(24, 8, TileWidth, TileHeight);
-     Tile[5] := TilesImage^.SpriteAt(32, 8, TileWidth, TileHeight);
-     Tile[6] := TilesImage^.SpriteAt(40, 8, TileWidth, TileHeight);
+     LoadTiles(TilesFilename);
+end;
+
+procedure GameMap.LoadTiles;
+var
+   TilesImage: ^PcxImage;
+   Cols, Rows: Word;
+   i, X, Y: Word;
+begin
+     New(TilesImage, Init(TilesFilename));
+
+     if (TilesImage^.Width mod TileWidth <> 0) or (TilesImage^.Height mod TileHeight <> 0) then
+        RunError;
+
+     for i := 0 to 255 do
+         SetColor(i, TilesImage^.Palette[i]);
+
+     Cols := TilesImage^.Width div TileWidth;
+     Rows := TilesImage^.Height div TileHeight;
+
+     if Cols * Rows > MaxTiles then
+        RunError;
+
+     for Y := 0 to Rows - 1 do
+         for X := 0 to Cols - 1 do
+             Tile[Y * Cols + X] := TilesImage^.SpriteAt(X * TileWidth, Y * TileHeight, TileWidth, TileHeight);
+
+     Dispose(TilesImage, Destroy);
 end;
 
 function GameMap.TileAt(X, Y: Word): Byte;
@@ -96,9 +124,36 @@ begin
      TileAt := Data[Y * WidthInColumns + X]
 end;
 
+procedure GameMap.GetTileInfo;
+var
+   T: Byte;
+begin
+     T := Data[Y * WidthInColumns + X];
+
+     case Chr(T + Ord('0')) of
+          'z', '{', '|': begin
+               Info.Solid := true;
+               Info.YOffset := 8;
+          end;
+          'l',
+          'c', 'd', 'e',
+          'q', 'r', 's': begin
+               Info.Solid := true;
+               Info.YOffset := 0;
+          end;
+          'v', 'w', 'x': begin
+               Info.Solid := true;
+               Info.YOffset := 0;
+          end;
+     else
+         Info.Solid := false
+     end;
+end;
+
 function GameMap.NextGroundYAt(XLeft, XRight, Y: Word): Word;
 var
    Txl, Txr, Ty: Byte;
+   InfoL, InfoR: TTileInfo;
 begin
      Txl := XLeft div TileWidth;
      Txr := XRight div TileWidth;
@@ -108,9 +163,12 @@ begin
 
      while Ty < HeightInRows do
      begin
-          if (TileAt(Txl, Ty) > 0) or (TileAt(Txr, Ty) > 0) then
+          GetTileInfo(Txl, Ty, InfoL);
+          GetTileInfo(Txr, Ty, InfoR);
+
+          if (InfoL.Solid) or (InfoR.Solid) then
           begin
-             NextGroundYAt := Ty * TileHeight;
+             NextGroundYAt := Ty * TileHeight + InfoL.YOffset;
              Break;
           end;
 
