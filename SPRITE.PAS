@@ -3,7 +3,7 @@ unit Sprite;
 
 interface
 
-uses Screen, Map;
+uses Screen;
 
 const
      MaxSprites = 100;
@@ -37,7 +37,7 @@ type
             );
             procedure SetPosition(NewX, NewY: Word);
             procedure Draw(ScrollX, ScrollY: Word);
-            procedure Update(TheMap: PGameMap); virtual;
+            procedure Update; virtual;
             procedure CaptureBackground(ScrollX, ScrollY: Word);
             procedure RedrawBackground(ScrollX, ScrollY: Word);
 
@@ -52,7 +52,7 @@ type
                   constructor Init;
                   procedure Add(Sprite: PSprite);
                   procedure Draw(ScrollX, ScrollY: Word);
-                  procedure Update(TheMap: PGameMap);
+                  procedure Update;
                   procedure CaptureBackground(ScrollX, ScrollY: Word);
                   procedure RedrawBackground(ScrollX, ScrollY: Word);
     end;
@@ -151,13 +151,13 @@ begin
               Sprites[i]^.Draw(ScrollX, ScrollY);
 end;
 
-procedure SpriteCollection.Update(TheMap: PGameMap);
+procedure SpriteCollection.Update;
 var
    i: Byte;
 begin
      if NumberOfSprites > 0 then
           for i := 0 to NumberOfSprites - 1 do
-              Sprites[i]^.Update(TheMap);
+              Sprites[i]^.Update;
 end;
 
 procedure SpriteCollection.CaptureBackground;

@@ -3,6 +3,8 @@ unit Screen;
 
 interface
 
+uses TETile;
+
 type
     VideoBuffer = Array[0..63999] of Byte;
 
@@ -21,8 +23,9 @@ type
             destructor Destroy; virtual;
             procedure Fill(Color: Byte); virtual;
             procedure PutPixel(X, Y: Word; Color: Byte); virtual;
-            procedure Draw(X, Y, Width, Height: Word; Data: PChar); virtual;
-            procedure DrawAlpha(X, Y, Width, Height: Word; Data: PChar); virtual;
+            procedure Draw(X, Y, Width, Height: Integer; Data: PChar); virtual;
+            procedure DrawAlpha(X, Y, Width, Height: Integer; Data: PChar); virtual;
+            procedure DrawEncoded(X, Y: Word; Image: PTTile); virtual;
             procedure CopyTo(Target: PCanvas); virtual;
             procedure CopyAreaTo(SrcX, SrcY, SrcWidth, SrcHeight: Word; Target: PCanvas; DstX, DstY: Word); virtual;
             procedure Update; virtual;
@@ -197,6 +200,9 @@ var
    Tx, Ty, Color: Byte;
    Sx, Sy: Word;
 begin
+     if (X + Width < 0) or (X > CanvasWidth) or (Y + Height < 0) or (Y > CanvasHeight) then
+        Exit;
+
      for Ty := 0 to Height - 1 do
          for Tx := 0 to Width - 1 do
          begin
@@ -207,6 +213,49 @@ begin
              if (Color <> 0) and (Sx >= 0) and (Sx < CanvasWidth) and (Sy >= 0) and (Sy < CanvasHeight) then
                 PutPixel(Sx, Sy, Color);
          end;
+end;
+
+procedure Canvas.DrawEncoded;
+var
+   i, ImageX, ImageY: Word;
+   Segment, Offset: Word;
+   Dst: Pointer;
+   DrawLength, Length: Integer;
+begin
+     i := 0;
+     ImageX := 0;
+     ImageY := 0;
+     Segment := Seg(Image^.Data^);
+     Offset := Ofs(Image^.Data^);
+
+     while i < Image^.Size do
+     begin
+          ImageX := Ord(Image^.Data[i]);
+          ImageY := Ord(Image^.Data[i + 1]);
+          Length := Ord(Image^.Data[i + 2]);
+
+          Inc(i, 3);
+
+          if (Y + ImageY >= 0) and (Y + ImageY < CanvasHeight) then
+          begin
+             Dst := Pointers[Y + ImageY];
+
+             DrawLength := Length;
+
+             if X + ImageX + DrawLength > CanvasWidth then
+                DrawLength := CanvasWidth - X - ImageX;
+
+             if DrawLength > 0 then
+                Move(
+                     Ptr(Segment, Offset + i)^,
+                     Ptr(Seg(Dst^), Ofs(Dst^) + X + ImageX)^,
+                     DrawLength
+                );
+          end;
+
+          Inc(i, Length);
+     end;
+
 end;
 
 procedure Canvas.CopyTo;

@@ -7,7 +7,6 @@ uses Screen, PcxImg, VGA;
 const
     MaxWidth = 200;
     MaxHeight = 100;
-    MaxTiles = 255;
 
 type
     PTileInfo = ^TTileInfo;
@@ -20,13 +19,8 @@ type
     GameMap = object
             private
                 WidthInColumns, HeightInRows: Word;
-                Screen: PCanvas;
-                NumCanvasColumns, NumCanvasRows: Word;
                 Data: Array[0..MaxWidth * MaxHeight] of Byte;
-                Tile: Array[0..MaxTiles] of PChar;
 
-                procedure LoadTiles(TilesFilename: String);
-                procedure DrawTiles(StartCol, EndCol, StartRow, EndRow, ColOffset, RowOffset: Word);
                 procedure BlitToScreen(X, Y: Word);
             public
                 Width, Height: Word;
@@ -34,11 +28,10 @@ type
                 PrevX, PrevY: Word;
                 MapCanvas: Buffer;
 
-                constructor Init(Filename: String; TheScreen: PCanvas; TilesFilename: String; TWidth, THeight: Word);
+                constructor Init(Filename: String);
                 function TileAt(X, Y: Word): Byte;
                 procedure GetTileInfo(X, Y: Word; var Info: TTileInfo);
                 function NextGroundYAt(XLeft, XRight, Y: Word): Word;
-                procedure Draw(X, Y: Word);
                 procedure Update(X, Y: Word);
     end;
 
@@ -53,17 +46,6 @@ var
    Line: String;
    X, Y: Word;
 begin
-     Screen := TheScreen;
-
-     TileWidth := TWidth;
-     TileHeight := THeight;
-
-     MapCanvas.Init(Screen^.CanvasWidth + TileWidth, Screen^.CanvasHeight + TileHeight);
-     NumCanvasColumns := MapCanvas.CanvasWidth div TileWidth;
-     NumCanvasRows := MapCanvas.CanvasHeight div TileHeight;
-
-     MapCanvas.Fill(0);
-
      Assign(MapFile, Filename);
      Reset(MapFile);
 
@@ -88,39 +70,21 @@ begin
      Height := HeightInRows * TileHeight;
 
      Close(MapFile);
-
-     LoadTiles(TilesFilename);
-end;
-
-procedure GameMap.LoadTiles;
-var
-   TilesImage: ^PcxImage;
-   Cols, Rows: Word;
-   i, X, Y: Word;
-begin
-     New(TilesImage, Init(TilesFilename));
-
-     if (TilesImage^.Width mod TileWidth <> 0) or (TilesImage^.Height mod TileHeight <> 0) then
-        RunError;
-
-     for i := 0 to 255 do
-         SetColor(i, TilesImage^.Palette[i]);
-
-     Cols := TilesImage^.Width div TileWidth;
-     Rows := TilesImage^.Height div TileHeight;
-
-     if Cols * Rows > MaxTiles then
-        RunError;
-
-     for Y := 0 to Rows - 1 do
-         for X := 0 to Cols - 1 do
-             Tile[Y * Cols + X] := TilesImage^.SpriteAt(X * TileWidth, Y * TileHeight, TileWidth, TileHeight);
-
-     Dispose(TilesImage, Destroy);
 end;
 
 function GameMap.TileAt(X, Y: Word): Byte;
+var
+   Index: Word;
 begin
+     Index := Y * WidthInColumns + X;
+
+     if Index > MaxWidth * MaxHeight then
+     begin
+        TileAt := 255;
+        Exit;
+     end;
+
+
      TileAt := Data[Y * WidthInColumns + X]
 end;
 
@@ -176,23 +140,6 @@ begin
      end;
 end;
 
-procedure GameMap.Draw;
-var
-   Col, Row: Word;
-   StartCol, StartRow: Word;
-begin
-     DrawTiles(
-         0,
-         NumCanvasColumns - 1,
-         0,
-         NumCanvasRows - 1,
-         X div TileWidth,
-         Y div TileHeight
-     );
-
-     BlitToScreen(X, Y);
-end;
-
 type
     PUpdateInfo = ^UpdateInfo;
     UpdateInfo = record
@@ -203,6 +150,7 @@ type
         NumTilesEnd: Integer;
         NeedsRedraw: Boolean;
     end;
+
 
 function UpdateInfoFor(Prev, Next, ScreenSize, BufferSize, TileSize: Integer): PUpdateInfo;
 var
@@ -256,7 +204,7 @@ var
    XInfo, YInfo: PUpdateInfo;
    XColumns: LongInt;
 begin
-     if (X = PrevX) and (Y = PrevY) then
+     {if (X = PrevX) and (Y = PrevY) then
         Exit;
 
      XInfo := UpdateInfoFor(PrevX, X, Screen^.CanvasWidth, MapCanvas.CanvasWidth, TileWidth);
@@ -316,28 +264,12 @@ begin
      BlitToScreen(X, Y);
 
      Dispose(XInfo);
-     Dispose(YInfo);
-end;
-
-procedure GameMap.DrawTiles;
-var
-   Col, Row: Word;
-begin
-     for Row := StartRow to EndRow do
-         for Col := StartCol to EndCol do
-             MapCanvas.Draw(
-                 Col * TileWidth,
-                 Row * TileHeight,
-                 TileWidth,
-                 TileHeight,
-                 Tile[TileAt(Col + ColOffset, Row + RowOffset)]
-             );
-
+     Dispose(YInfo);}
 end;
 
 procedure GameMap.BlitToScreen;
 begin
-     MapCanvas.CopyAreaTo(
+     {MapCanvas.CopyAreaTo(
          X mod TileWidth, Y mod TileHeight,
          Screen^.CanvasWidth, Screen^.CanvasHeight,
          Screen,
@@ -346,7 +278,7 @@ begin
 
 
      PrevX := X;
-     PrevY := Y;
+     PrevY := Y;}
 end;
 
 end.
