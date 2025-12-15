@@ -49,4 +49,16 @@ If you wanna learn more about the backstory and why I'm doing this, check out th
 
 - [Friday](https://github.com/weph/back-to-the-pascal/tree/week5)
 
+## Week 6: New Direction?
+
+[![New Direction? - Week 6 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week6.jpg)](https://www.youtube.com/watch?v=_kDptFneAdw&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_)
+
+- [Friday](https://github.com/weph/back-to-the-pascal/tree/week6)
+
+## Episode 7: Isometric Struggles
+
+[![Isometric Struggles - Episode 7 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-episode7.jpg)](https://www.youtube.com/watch?v=2JZ35t_8q1A&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_)
+
+- [Friday](https://github.com/weph/back-to-the-pascal/tree/episode7)
+
 [Playlist]: https://www.youtube.com/watch?v=EeAz5rUbE9A&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_
