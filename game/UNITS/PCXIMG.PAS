@@ -3,7 +3,7 @@ unit PcxImg;
 
 interface
 
-uses VGA;
+uses VGA, Image;
 
 type
     PcxHeader = record
@@ -35,7 +35,7 @@ type
                    destructor Destroy;
                    function Width: Word;
                    function Height: Word;
-                   function SpriteAt(X, Y, SpriteWidth, SpriteHeight: Word): PChar;
+                   function ImageAt(X, Y, W, H: Word): PImage;
     end;
 
 
@@ -53,7 +53,7 @@ begin
      Reset(Image, 1);
 
      BlockRead(Image, Header, SizeOf(Header));
-     DataLen := Header.SourceWidth * Header.SourceHeight;
+     DataLen := (Header.XMax + 1) * (Header.YMax + 1);
      GetMem(Data, DataLen);
 
      CurrentPos := 0;
@@ -100,22 +100,26 @@ begin
      Height := Header.SourceHeight;
 end;
 
-function PcxImage.SpriteAt(X, Y, SpriteWidth, SpriteHeight: Word): PChar;
+function PcxImage.ImageAt;
 var
    Xp, Yp, i: Word;
-   Sprite: PChar;
+   Result: PImage;
+   Temp: Pointer;
 begin
-     GetMem(Sprite, SpriteWidth * SpriteHeight);
+     New(Result);
+     Result^.Width := W;
+     Result^.Height := H;
+     Result^.MemSize := W * H;
+     GetMem(Temp, W * H);
 
      i := 0;
-     for Yp := Y to Y + SpriteHeight - 1 do
-         for Xp := X to X + SpriteWidth - 1 do
-         begin
-             Sprite[i] := Data[Yp * Width + Xp];
+     for Yp := Y to Y + H - 1 do
+         for Xp := X to X + W - 1 do begin
+             PChar(Temp)[i] := Data[Yp * Width + Xp];
              Inc(i);
          end;
 
-     SpriteAt := Sprite;
+     ImageAt := New(PImage, Init(W, H, Temp));
 end;
 
 begin
