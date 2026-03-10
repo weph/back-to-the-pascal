@@ -19,16 +19,88 @@ const
      ScreenOffset = (TileHeight * PlaneWidth) + (TileWidth div 4);
 
 
-procedure X_Draw16x16Opaque(Page: Byte; X, Y: Integer; Image: PImage);
+procedure X_Fill(Color: Byte);
 
-procedure X_DrawAlpha(Page: Byte; X, Y: Integer; Image: PImage);
+procedure X_PutPixel(Page: Byte; X, Y: Word; Color: Byte);
+
+procedure X_PutChar(Page: Byte; X, Y: Word; C: Char);
+
+procedure X_PutString(Page: Byte; X, Y: Word; S: String);
+
+procedure X_DrawRect(Page: Byte; X1, Y1, X2, Y2: Word; Color: Byte);
+
+procedure X_Draw16x16Opaque(Page: Byte; X, Y: Word; Image: PImage);
+
+procedure X_DrawAlpha(Page: Byte; X, Y: Word; Image: PImage);
 
 
 implementation
 
 uses VGA;
 
-procedure X_Draw16x16Opaque(Page: Byte; X, Y: Integer; Image: PImage);
+procedure X_Fill(Color: Byte);
+begin
+     SelectPlanes($f);
+     FillChar(Mem[$a000:$0000], 65535, Color);
+end;
+
+procedure X_PutPixel(Page: Byte; X, Y: Word; Color: Byte);
+var
+   Plane: Byte;
+begin
+     Plane := X and 3;
+
+     SelectPlanes(1 shl Plane);
+     Mem[$a000:PageOffset[Page] + Y * PlaneWidth + X shr 2] := Color;
+end;
+
+procedure X_PutChar(Page: Byte; X, Y: Word; C: Char);
+var
+   Cx, Cy, Mask, Color: Byte;
+   Chars: array[0..255*8] of byte absolute $f000:$fa6e;
+begin
+     for Cy := 0 to 7 do
+     begin
+          Mask := $80;
+          for Cx := 0 to 7 do
+          begin
+               if Chars[Ord(C) * 8 + Cy] and Mask = Mask then
+                   Color := 31
+               else
+                   Color := 0;
+
+               X_PutPixel(Page, X + Cx, Y + Cy, Color);
+
+               Mask := Mask shr 1;
+          end;
+     end;
+end;
+
+procedure X_PutString(Page: Byte; X, Y: Word; S: String);
+var
+   i: Integer;
+begin
+     for i := 1 to Length(S) do
+         X_PutChar(Page, X + (i - 1) * 8, Y, S[i]);
+end;
+
+procedure X_DrawRect(Page: Byte; X1, Y1, X2, Y2: Word; Color: Byte);
+var
+   X, Y: Word;
+begin
+     for X := X1 to X2 do begin
+         X_PutPixel(Page, X, Y1, Color);
+         X_PutPixel(Page, X, Y2, Color);
+     end;
+
+     for Y := Y1 to Y2 do begin
+         X_PutPixel(Page, X1, Y, Color);
+         X_PutPixel(Page, X2, Y, Color);
+     end;
+end;
+
+
+procedure X_Draw16x16Opaque(Page: Byte; X, Y: Word; Image: PImage);
 const
     RemPlaneWidth = PlaneWidth - 4;
 var
@@ -329,7 +401,7 @@ begin
      end;
 end;
 
-procedure X_DrawAlpha(Page: Byte; X, Y: Integer; Image: PImage);
+procedure X_DrawAlpha(Page: Byte; X, Y: Word; Image: PImage);
 var
    ImageData: Pointer;
    Plane: Byte;

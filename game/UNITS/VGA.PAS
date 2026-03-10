@@ -23,15 +23,7 @@ procedure WaitForVRetrace;
 
 procedure SetColor(Index: Byte; Color: TColor);
 
-procedure PutChar(X, Y: Word; C: Char);
-
-procedure PutString(X, Y: Word; S: String);
-
 procedure InitModeX;
-
-procedure ModeXPutPixel(X, Y: Word; Color: Byte);
-
-procedure ModeXFill(Color: Byte);
 
 procedure SetCrtc(Register, Value: Byte);
 
@@ -84,37 +76,6 @@ begin
      Port[PaletteData] := Color.Blue shr 2;
 end;
 
-procedure PutChar;
-var
-   Cx, Cy, Mask, Color: Byte;
-   Chars: array[0..255*8] of byte absolute $f000:$fa6e;
-   Vga: array[0..63999] of byte absolute $a000:$0000;
-begin
-     for Cy := 0 to 7 do
-     begin
-          Mask := $80;
-          for Cx := 0 to 7 do
-          begin
-               if Chars[Ord(C) * 8 + Cy] and Mask = Mask then
-                   Color := 31
-               else
-                   Color := 0;
-
-               ModeXPutPixel(X + Cx, Y + Cy, Color);
-
-               Mask := Mask shr 1;
-          end;
-     end;
-end;
-
-procedure PutString;
-var
-   i: Integer;
-begin
-     for i := 1 to Length(S) do
-         PutChar(X + (i - 1) * 8, Y, S[i]);
-end;
-
 procedure InitModeX;
 var
    VSyncEnd: Byte;
@@ -154,24 +115,6 @@ begin
      SetCrtc($17, $e3);
 end;
 
-procedure ModeXPutPixel;
-var
-   Plane: Byte;
-   Dx: Word;
-begin
-     Dx := X div 4;
-     Plane := X mod 4;
-
-     SelectPlanes(1 shl Plane);
-     Mem[$a000:Y * 96 + Dx] := Color;
-end;
-
-procedure ModeXFill;
-begin
-     SelectPlanes($f);
-     FillChar(Mem[$a000:$0000], 65535, Color);
-end;
-
 procedure SetCrtc;
 begin
      Port[CrtcIndex] := Register;
@@ -184,17 +127,6 @@ begin
      Port[ScData] := Planes;
 end;
 
-procedure SetVideoStartAddressOld;
-begin
-     {low byte}
-     {Port[CrtcIndex] := $0d;
-     Port[CrtcData] := Offset and $ff;}
-
-     {high byte}
-     {Port[CrtcIndex] := $0c;
-     Port[CrtcData] := Offset shr 8;}
-end;
-
 procedure SetVideoStartAddress;
 var
    OffsetLow, OffsetHigh, PanOffset: Byte;
@@ -202,13 +134,6 @@ begin
      OffsetLow := Offset and $ff;
      OffsetHigh := Offset shr 8;
      PanOffset := (Pan shl 1) mod 8;
-
-         {Tmp := Port[$3da];
-         Tmp := Port[$3c0];
-         Port[$3c0] := $13;
-         Port[$3c0] := (X shl 1) mod 8;
-         Port[$3c0] := Tmp;}
-
 
      asm
         mov dx, 03dah

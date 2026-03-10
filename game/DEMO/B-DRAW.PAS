@@ -2,7 +2,7 @@ program DrawBenchmark;
 uses VGA, ModeX, Zentimer, PCXImg, Image, Debug, Drivers;
 
 type
-    TDrawFunc = procedure(Page: Byte; X, Y: Integer; Image: PImage);
+    TDrawFunc = procedure(Page: Byte; X, Y: Word; Image: PImage);
 
 const
      Cols = LogicalScreenWidth div TileWidth;
@@ -30,7 +30,7 @@ var
    Num: String;
 begin
      for i := 0 to Iterations - 1 do begin
-         ModeXFill(7);
+         X_Fill(7);
 
          Str(i, Num);
 

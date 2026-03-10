@@ -13,7 +13,6 @@ type
             CurrentFps: Real;
             constructor Init(TheSampleSize: Word);
             procedure Update;
-            procedure Show;
     end;
 
     PStopwatch = ^TStopwatch;
@@ -154,15 +153,6 @@ begin
      LastTs := NextTs;
      Frames := 0;
 end;
-
-procedure FpsInfo.Show;
-var
-   S: String;
-begin
-     Str(CurrentFps:0:3, S);
-     PutString(0, 0, S);
-end;
-
 
 begin
      New(Profiler, Init);

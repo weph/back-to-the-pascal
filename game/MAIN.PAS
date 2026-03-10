@@ -119,50 +119,6 @@ begin
 
 end;
 
-procedure PutPixel(Page: Byte; ScrollX, ScrollY, X, Y: Word; Color: Byte);
-var
-   Plane: Byte;
-   Dx: Word;
-begin
-     Dx := (ScrollX + X) div 4;
-     Plane := X mod 4;
-
-     SelectPlanes(1 shl Plane);
-     Mem[$a000:PageOffset[Page] + (ScrollY + Y) * PlaneWidth + Dx] := Color;
-end;
-
-procedure PutChar(Page: Byte; X, Y: Word; C: Char);
-var
-   Cx, Cy, Mask, Color: Byte;
-   Chars: array[0..255*8] of byte absolute $f000:$fa6e;
-   Vga: array[0..63999] of byte absolute $a000:$0000;
-begin
-     for Cy := 0 to 7 do
-     begin
-          Mask := $80;
-          for Cx := 0 to 7 do
-          begin
-               if Chars[Ord(C) * 8 + Cy] and Mask = Mask then
-                   Color := 31
-               else
-                   Color := 0;
-
-               PutPixel(Page, 0, 0, X + Cx, Y + Cy, Color);
-
-               Mask := Mask shr 1;
-          end;
-     end;
-end;
-
-procedure PutString(Page: Byte; X, Y: Word; S: String);
-var
-   i: Integer;
-begin
-     for i := 1 to Length(S) do
-         PutChar(Page, X + (i - 1) * 8, Y, S[i]);
-end;
-
-
 function KeyboardScanCode: Byte;
 begin
      asm
@@ -206,7 +162,6 @@ begin
 
      for Y := 0 to 11 do begin
          for X := 0 to 19 do begin
-             {Tiles[Y * 20 + X + 1] := Img.ImageAt(0, 0, 16, 16);}
              Tiles[Y * 20 + X + 1] := Img.ImageAt(X * 16, Y * 16, 16, 16);
              Tiles[Y * 20 + X + 1]^.TransparencyEncode;
          end;
@@ -274,21 +229,6 @@ begin
                  end;
              end;
          end;
-     end;
-end;
-
-procedure Rect(Page: Byte; ScrollX, ScrollY, X1, Y1, X2, Y2: Word; Color: Byte);
-var
-   X, Y: Word;
-begin
-     for X := X1 to X2 do begin
-         PutPixel(Page, ScrollX, ScrollY, X, Y1, Color);
-         PutPixel(Page, ScrollX, ScrollY, X, Y2, Color);
-     end;
-
-     for Y := Y1 to Y2 do begin
-         PutPixel(Page, ScrollX, ScrollY, X1, Y, Color);
-         PutPixel(Page, ScrollX, ScrollY, X2, Y, Color);
      end;
 end;
 
@@ -487,7 +427,7 @@ begin
      InitialColOffset := ColOffset;
      InitialRowOffset := RowOffset;
 
-     ModeXFill(0);
+     X_Fill(0);
      DrawMap(0, ColOffset, RowOffset, 0, MapCols - 1, 0, MapRows - 1, 0, 0);
      DrawMap(1, ColOffset, RowOffset, 0, MapCols - 1, 0, MapRows - 1, 0, 0);
      SetVideoStartAddress(PageOffset[0] + ScreenOffset, 0);
@@ -521,6 +461,15 @@ begin
                    LastRedrawX * TileWidth,
                    LastRedrawY * TileHeight
            );
+
+           {X_DrawRect(
+                NextPage,
+                NextRedrawX * TileWidth + PTileX * TileWidth,
+                NextRedrawY * TileHeight + PTileY * TileHeight,
+                NextRedrawX * TileWidth + PTileXE * TileWidth,
+                NextRedrawY * TileHeight + PTileYE * TileHeight,
+                1
+           );}
 
            Player.Update;
 
@@ -627,7 +576,7 @@ end;
 begin
      InitModeX;
      SetScreenWidth(LogicalScreenWidth);
-     ModeXFill(0);
+     X_Fill(0);
 
      LoadPlayer;
 
