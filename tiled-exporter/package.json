@@ -1,0 +1,15 @@
+{
+    "name": "@bttp/tiled-exporter",
+    "version": "1.0.0",
+    "main": "index.js",
+    "author": "Philip Weinke <its@weph.dev>",
+    "license": "MIT",
+    "description": "",
+    "scripts": {
+        "build": "tsc"
+    },
+    "devDependencies": {
+        "@mapeditor/tiled-api": "^1.11.0",
+        "typescript": "^5.9.3"
+    }
+}
