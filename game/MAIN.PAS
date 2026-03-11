@@ -1,14 +1,12 @@
 {$R-,S-}
 program Main;
-uses Crt, IsoMap, VGA, Image, PCXImg, Drivers, Debug, ModeX;
+uses Crt, IsoMap, VGA, Image, PCXImg, Drivers, Debug, ModeX, Types;
 
 const
      MapCols = LogicalScreenWidth div TileWidth;
      MapRows = LogicalScreenHeight div TileHeight;
 
 type
-    TDirection = (N, NE, E, SE, S, SW, W, NW);
-
     TPlayer = object
         X, Y, Z: Integer;
         D: TDirection;
@@ -17,11 +15,6 @@ type
 
         procedure Push;
         procedure Update;
-    end;
-
-
-    TCoordinate = record
-        X, Y: Integer;
     end;
 
 var
