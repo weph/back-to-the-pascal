@@ -1,0 +1,130 @@
+unit Player;
+
+interface
+
+uses Types, IsoMap;
+
+type
+    TPlayer = object
+        X, Y, Z: Integer;
+        D: TDirection;
+        Speed: Byte;
+        PushCycle: Byte;
+        Map: PGameMap;
+
+        constructor Init(TheMap: PGameMap);
+        procedure Push;
+        procedure Update(Frame: LongInt);
+        procedure Turn(Steps: ShortInt);
+    end;
+
+implementation
+
+uses ModeX;
+
+function HasCollision(Map: PGameMap; X1, Y1, X2, Y2: Word): Boolean;
+var
+   Tx1, Tx2, Ty1, Ty2: Word;
+   X, Y: Word;
+begin
+     Tx1 := X1 div TileWidth;
+     Ty1 := Y1 div TileHeight;
+     Tx2 := X2 div TileWidth;
+     Ty2 := Y2 div TileHeight;
+
+     for Y := Ty1 to Ty2 do begin
+         for X := Tx1 to Tx2 do begin
+             if not Map^.IsWalkable(X, Y) then begin
+                HasCollision := true;
+                Exit;
+             end;
+         end;
+     end;
+
+     HasCollision := false;
+end;
+
+constructor TPlayer.Init(TheMap: PGameMap);
+begin
+     Map := TheMap;
+end;
+
+procedure TPlayer.Push;
+begin
+     Speed := 3;
+     PushCycle := 16;
+end;
+
+procedure TPlayer.Turn(Steps: ShortInt);
+var
+   Next: ShortInt;
+begin
+     Next := (Ord(D) + Steps) mod 8;
+
+     if Next < 0 then
+        D := TDirection(8 + Next)
+     else
+         D := TDirection(Next);
+end;
+
+procedure TPlayer.Update;
+var
+   Next: TCoordinate;
+begin
+     Next.X := X;
+     Next.Y := Y;
+
+     if (Frame mod 8 = 0) and (Z > 0) then Dec(Z);
+
+     with Next do begin
+          case D of
+               N: Dec(Y, Speed);
+               NE: begin
+                   Inc(X, Speed);
+                   Dec(Y, Speed);
+               end;
+               E: Inc(X, Speed);
+               SE: begin
+                   Inc(X, Speed);
+                   Inc(Y, Speed);
+               end;
+               S: Inc(Y, Speed);
+               SW: begin
+                   Dec(X, Speed);
+                   Inc(Y, Speed);
+               end;
+               W: Dec(X, Speed);
+               NW: begin
+                   Dec(X, Speed);
+                   Dec(Y, Speed);
+               end;
+          end;
+     end;
+
+     if (Z < 8) and (HasCollision(Map, Next.X + 8, Next.Y + 8, Next.X + 24, Next.Y + 24)) then begin
+        Speed := 0;
+        Exit;
+     end;
+
+     if PushCycle > 0 then begin
+        Dec(PushCycle);
+     end;
+
+     if (PushCycle = 0) and (Frame mod 2 = 0) and (Speed > 0) then begin
+        Dec(Speed);
+     end;
+
+     X := Next.X;
+     Y := Next.Y;
+
+     if X < 16 then X := 16;
+     if Y < 16 then Y := 16;
+     if X > (Map^.WidthInColumns * TileWidth - 48) then
+        X := Map^.WidthInColumns * TileWidth - 48;
+     if Y > (Map^.HeightInRows * TileHeight - 48) then
+        Y := Map^.HeightInRows * TileHeight - 48;
+
+end;
+
+
+end.

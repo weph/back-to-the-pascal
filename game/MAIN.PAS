@@ -1,21 +1,10 @@
 {$R-,S-}
 program Main;
-uses Crt, IsoMap, VGA, Image, PCXImg, Drivers, Debug, ModeX, Types;
+uses Crt, IsoMap, VGA, Image, PCXImg, Drivers, Debug, ModeX, Types, Player;
 
 const
      MapCols = LogicalScreenWidth div TileWidth;
      MapRows = LogicalScreenHeight div TileHeight;
-
-type
-    TPlayer = object
-        X, Y, Z: Integer;
-        D: TDirection;
-        Speed: Byte;
-        PushCycle: Byte;
-
-        procedure Push;
-        procedure Update;
-    end;
 
 var
    Map: GameMap;
@@ -23,94 +12,6 @@ var
    Tiles: array[1..255] of PImage;
    PlayerSprites: array[TDirection] of PImage;
    Frame: LongInt;
-
-function HasCollision(X1, Y1, X2, Y2: Word): Boolean;
-var
-   Tx1, Tx2, Ty1, Ty2: Word;
-   X, Y: Word;
-begin
-     Tx1 := X1 div TileWidth;
-     Ty1 := Y1 div TileHeight;
-     Tx2 := X2 div TileWidth;
-     Ty2 := Y2 div TileHeight;
-
-     for Y := Ty1 to Ty2 do begin
-         for X := Tx1 to Tx2 do begin
-             if not Map.IsWalkable(X, Y) then begin
-                HasCollision := true;
-                Exit;
-             end;
-         end;
-     end;
-
-     HasCollision := false;
-end;
-
-
-procedure TPlayer.Push;
-begin
-     Speed := 3;
-     PushCycle := 16;
-end;
-
-procedure TPlayer.Update;
-var
-   Next: TCoordinate;
-begin
-     Next.X := X;
-     Next.Y := Y;
-
-     if (Frame mod 8 = 0) and (Z > 0) then Dec(Z);
-
-     with Next do begin
-          case D of
-               N: Dec(Y, Speed);
-               NE: begin
-                   Inc(X, Speed);
-                   Dec(Y, Speed);
-               end;
-               E: Inc(X, Speed);
-               SE: begin
-                   Inc(X, Speed);
-                   Inc(Y, Speed);
-               end;
-               S: Inc(Y, Speed);
-               SW: begin
-                   Dec(X, Speed);
-                   Inc(Y, Speed);
-               end;
-               W: Dec(X, Speed);
-               NW: begin
-                   Dec(X, Speed);
-                   Dec(Y, Speed);
-               end;
-          end;
-     end;
-
-     if (Z < 8) and (HasCollision(Next.X + 8, Next.Y + 8, Next.X + 24, Next.Y + 24)) then begin
-        Speed := 0;
-        Exit;
-     end;
-
-     if PushCycle > 0 then begin
-        Dec(PushCycle);
-     end;
-
-     if (PushCycle = 0) and (Frame mod 2 = 0) and (Speed > 0) then begin
-        Dec(Speed);
-     end;
-
-     X := Next.X;
-     Y := Next.Y;
-
-     if X < 16 then X := 16;
-     if Y < 16 then Y := 16;
-     if X > (Map.WidthInColumns * TileWidth - 48) then
-        X := Map.WidthInColumns * TileWidth - 48;
-     if Y > (Map.HeightInRows * TileHeight - 48) then
-        Y := Map.HeightInRows * TileHeight - 48;
-
-end;
 
 function KeyboardScanCode: Byte;
 begin
@@ -288,69 +189,6 @@ begin
      end;
 end;
 
-procedure MovePlayer(var Player: TPlayer);
-var
-   Speed: Byte;
-   Next: TCoordinate;
-begin
-     Next.X := Player.X;
-     Next.Y := Player.Y;
-
-     if (Frame mod 8 = 0) and (Player.Z > 0) then Dec(Player.Z);
-
-     Speed := Player.Speed;
-     with Next do begin
-          case Player.D of
-               N: Dec(Y, Speed);
-               NE: begin
-                   Inc(X, Speed);
-                   Dec(Y, Speed);
-               end;
-               E: Inc(X, Speed);
-               SE: begin
-                   Inc(X, Speed);
-                   Inc(Y, Speed);
-               end;
-               S: Inc(Y, Speed);
-               SW: begin
-                   Dec(X, Speed);
-                   Inc(Y, Speed);
-               end;
-               W: Dec(X, Speed);
-               NW: begin
-                   Dec(X, Speed);
-                   Dec(Y, Speed);
-               end;
-          end;
-     end;
-
-     if (Player.Z < 8) and (HasCollision(Next.X + 8, Next.Y + 8, Next.X + 24, Next.Y + 24)) then
-        Exit;
-
-     Player.X := Next.X;
-     Player.Y := Next.Y;
-
-     if Player.X < 16 then Player.X := 16;
-     if Player.Y < 16 then Player.Y := 16;
-     if Player.X > (Map.WidthInColumns * TileWidth - 48) then
-        Player.X := Map.WidthInColumns * TileWidth - 48;
-     if Player.Y > (Map.HeightInRows * TileHeight - 48) then
-        Player.Y := Map.HeightInRows * TileHeight - 48;
-
-end;
-
-procedure TurnPlayer(var Player: TPlayer; Steps: ShortInt);
-var
-   Next: ShortInt;
-begin
-     Next := (Ord(Player.D) + Steps) mod 8;
-
-     if Next < 0 then
-        Player.D := TDirection(8 + Next)
-     else
-         Player.D := TDirection(Next);
-end;
-
 procedure UpdateMapOrigin(var Player: TPlayer; var MapOrigin: TCoordinate);
 var
    MaxScrollX, MaxScrollY: Word;
@@ -406,6 +244,7 @@ begin
      MaxScrollX := (Map.WidthInColumns * TileWidth) - 320 - TileWidth;
      MaxScrollY := (Map.HeightInRows * TileHeight) - 240 - TileHeight;
 
+     Player.Init(@Map);
      Player.D := S;
      Player.X := 64;
      Player.Y := 16;
@@ -464,7 +303,7 @@ begin
                 1
            );}
 
-           Player.Update;
+           Player.Update(Frame);
 
            UpdateMapOrigin(Player, MapOrigin);
 
@@ -553,10 +392,8 @@ begin
                 16: Running := false;
                 48: Break := true;
 
-                17: MovePlayer(Player);
-                31: MovePlayer(Player);
-                32: TurnPlayer(Player, 1);
-                30: TurnPlayer(Player, -1);
+                32: Player.Turn(1);
+                30: Player.Turn(-1);
 
                 $19: Player.Push;
                 $39: Player.Z := 16;
