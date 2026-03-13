@@ -11,11 +11,12 @@ type
         Speed: Byte;
         PushCycle: Byte;
         Map: PGameMap;
+        LastTurn: LongInt;
 
         constructor Init(TheMap: PGameMap);
         procedure Push;
         procedure Update(Frame: LongInt);
-        procedure Turn(Steps: ShortInt);
+        procedure Turn(Frame: LongInt; Steps: ShortInt);
     end;
 
 implementation
@@ -51,20 +52,24 @@ end;
 
 procedure TPlayer.Push;
 begin
-     Speed := 3;
+     Speed := 2;
      PushCycle := 16;
 end;
 
-procedure TPlayer.Turn(Steps: ShortInt);
+procedure TPlayer.Turn(Frame: LongInt; Steps: ShortInt);
 var
    Next: ShortInt;
 begin
+     if Frame - LastTurn < 10 then Exit;
+
      Next := (Ord(D) + Steps) mod 8;
 
      if Next < 0 then
         D := TDirection(8 + Next)
      else
          D := TDirection(Next);
+
+     LastTurn := Frame;
 end;
 
 procedure TPlayer.Update;
