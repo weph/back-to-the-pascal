@@ -4,8 +4,8 @@ interface
 
 const
     MaxWidth = 120;
-    MaxHeight = 150;
-    MaxDepth = 3;
+    MaxHeight = 100;
+    MaxDepth = 4;
 
 type
     PGameMap = ^GameMap;
