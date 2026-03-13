@@ -1,6 +1,17 @@
 {$R-,S-}
 program Main;
-uses Crt, IsoMap, VGA, Image, PCXImg, Drivers, Debug, ModeX, Types, Player;
+uses
+    Crt,
+    IsoMap,
+    VGA,
+    Image,
+    PCXImg,
+    Drivers,
+    Debug,
+    ModeX,
+    Types,
+    Player,
+    Keyboard;
 
 const
      MapCols = LogicalScreenWidth div TileWidth;
@@ -12,25 +23,6 @@ var
    Tiles: array[1..255] of PImage;
    PlayerSprites: array[TDirection] of PImage;
    Frame: LongInt;
-
-function KeyboardScanCode: Byte;
-begin
-     asm
-        mov ah, 01h
-        int 16h
-        jz @empty
-
-        mov ah, 00h
-        int 16h
-        jmp @done
-
-     @empty:
-        xor ah, ah
-
-     @done:
-        mov @Result, ah
-     end;
-end;
 
 procedure Draw(Page: Byte; X, Y: Integer; Image: PImage);
 begin
@@ -388,16 +380,11 @@ begin
 
            Page := NextPage;
 
-           case KeyboardScanCode of
-                16: Running := false;
-                48: Break := true;
-
-                32: Player.Turn(1);
-                30: Player.Turn(-1);
-
-                $19: Player.Push;
-                $39: Player.Z := 16;
-           end;
+           if Keys[$10] then Running := False;
+           if Keys[$1e] then Player.Turn(Frame, -1);
+           if Keys[$20] then Player.Turn(Frame, 1);
+           if Keys[$19] then Player.Push;
+           if Keys[$39] then Player.Z := 16;
 
            Inc(Frame);
      end;
