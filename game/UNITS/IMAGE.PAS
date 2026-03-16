@@ -12,7 +12,9 @@ type
         TransparencyEncoded: Boolean;
 
         constructor Init(IWidth, IHeight: Word; IData: Pointer);
+        constructor New(IWidth, IHeight: Word);
         destructor Destroy;
+        procedure Fill(Color: Byte);
         procedure Encode;
         procedure TileEncode;
         procedure TransparencyEncode;
@@ -31,9 +33,24 @@ begin
      TransparencyEncoded := false;
 end;
 
+constructor TImage.New;
+begin
+     Width := IWidth;
+     Height := IHeight;
+     MemSize := Width * Height;
+     TransparencyEncoded := false;
+     GetMem(Data, MemSize);
+     Fill(0);
+end;
+
 destructor TImage.Destroy;
 begin
      FreeMem(Data, MemSize);
+end;
+
+procedure TImage.Fill(Color: Byte);
+begin
+     FillChar(Data^, MemSize, Color);
 end;
 
 procedure TImage.Encode;
