@@ -9,6 +9,7 @@ type
         X, Y, Z: Integer;
         D: TDirection;
         Speed: Byte;
+        OllieCycle: Byte;
         PushCycle: Byte;
         Map: PGameMap;
         LastTurn: LongInt;
@@ -17,11 +18,26 @@ type
         procedure Push;
         procedure Update(Frame: LongInt);
         procedure Turn(Frame: LongInt; Steps: ShortInt);
+        procedure Ollie;
     end;
 
 implementation
 
 uses ModeX;
+
+const
+     PushCycleLength = 52;
+     PushCycleSteps: array[0..PushCycleLength - 1] of Byte = (
+         3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+         2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         0
+     );
+
+     OllieCycleLength = 23;
+     OllieCycleSteps: array[0..OllieCycleLength - 1] of Byte = (
+         0, 1, 3, 8, 15, 18, 18, 18, 18, 18, 18, 18, 18, 18, 15, 14, 13, 12, 10, 8, 3, 2, 0
+     );
 
 function HasCollision(Map: PGameMap; X1, Y1, X2, Y2: Word): Boolean;
 var
@@ -52,8 +68,7 @@ end;
 
 procedure TPlayer.Push;
 begin
-     Speed := 2;
-     PushCycle := 16;
+     PushCycle := PushCycleLength;
 end;
 
 procedure TPlayer.Turn(Frame: LongInt; Steps: ShortInt);
@@ -70,6 +85,13 @@ begin
          D := TDirection(Next);
 
      LastTurn := Frame;
+end;
+
+procedure TPlayer.Ollie;
+begin
+     if OllieCycle > 0 then Exit;
+
+     OllieCycle := OllieCycleLength;
 end;
 
 procedure TPlayer.Update;
@@ -106,17 +128,18 @@ begin
           end;
      end;
 
-     if (Z < 8) and (HasCollision(Map, Next.X + 8, Next.Y + 8, Next.X + 24, Next.Y + 24)) then begin
-        Speed := 0;
+     {if (Z < 8) and (HasCollision(Map, Next.X + 8, Next.Y + 8, Next.X + 24, Next.Y + 24)) then begin
         Exit;
+     end;}
+
+     if OllieCycle > 0 then begin
+        Z := OllieCycleSteps[OllieCycleLength - OllieCycle];
+        Dec(OllieCycle);
      end;
 
      if PushCycle > 0 then begin
+        Speed := PushCycleSteps[PushCycleLength - PushCycle];
         Dec(PushCycle);
-     end;
-
-     if (PushCycle = 0) and (Frame mod 2 = 0) and (Speed > 0) then begin
-        Dec(Speed);
      end;
 
      X := Next.X;
