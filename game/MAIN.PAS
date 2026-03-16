@@ -384,7 +384,7 @@ begin
            if Keys[$1e] then Player.Turn(Frame, -1);
            if Keys[$20] then Player.Turn(Frame, 1);
            if Keys[$19] then Player.Push;
-           if Keys[$39] then Player.Z := 16;
+           if Keys[$39] then Player.Ollie;
 
            Inc(Frame);
      end;
