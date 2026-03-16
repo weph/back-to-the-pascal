@@ -67,6 +67,7 @@ begin
      TileAlpha := SourceImage.ImageAt(16, 0, 16, 16);
      TileAlpha^.TransparencyEncode;
 
+     RunBenchmark('X_DrawOpaque', X_DrawOpaque, TileOpaque1);
      RunBenchmark('X_Draw16x16Opaque', X_Draw16x16Opaque, TileOpaque1);
      RunBenchmark('X_DrawAlpha (Opaque Tile)', X_DrawAlpha, TileOpaque2);
      RunBenchmark('X_DrawAlpha (Alpha Tile)', X_DrawAlpha, TileAlpha);

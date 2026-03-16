@@ -29,6 +29,8 @@ procedure X_PutString(Page: Byte; X, Y: Word; S: String);
 
 procedure X_DrawRect(Page: Byte; X1, Y1, X2, Y2: Word; Color: Byte);
 
+procedure X_DrawOpaque(Page: Byte; X, Y: Word; Image: PImage);
+
 procedure X_Draw16x16Opaque(Page: Byte; X, Y: Word; Image: PImage);
 
 procedure X_DrawAlpha(Page: Byte; X, Y: Word; Image: PImage);
@@ -99,6 +101,50 @@ begin
      end;
 end;
 
+procedure X_DrawOpaque(Page: Byte; X, Y: Word; Image: PImage);
+var
+   ImageData: PChar;
+   Width, Height, StartY, RemPlaneWidth: Word;
+begin
+     Width := Image^.Width shr 3;
+     Height := Image^.Height;
+     ImageData := Image^.Data;
+     StartY := PageOffset[Page] + Y * PlaneWidth + (X shr 2);
+     RemPlaneWidth := PlaneWidth - Image^.Width shr 2;
+
+     asm
+        push ds
+
+        lds si, ImageData
+
+        mov ax, $a000
+        mov es, ax
+
+        mov al, 2             { set plane operation }
+        mov ah, 1             { plane 1 }
+     @DrawPlane:
+        mov dx, ScIndex
+        out dx, ax            { set plane }
+
+        mov di, StartY        { tile's top left corner in video memory }
+
+        mov dx, Height        { number of rows }
+     @DrawRow:
+        mov cx, Width         { copy row }
+        rep movsw
+
+        add di, RemPlaneWidth { next line in video memory }
+
+        dec dx
+        jnz @DrawRow
+
+        shl ah, 1             { next plane }
+        cmp ah, 16
+        jne @DrawPlane
+
+        pop ds
+     end;
+end;
 
 procedure X_Draw16x16Opaque(Page: Byte; X, Y: Word; Image: PImage);
 const
