@@ -35,6 +35,8 @@ procedure X_Draw16x16Opaque(Page: Byte; X, Y: Word; Image: PImage);
 
 procedure X_DrawAlpha(Page: Byte; X, Y: Word; Image: PImage);
 
+procedure X_CopyToSysMem(Page: Byte; X, Y, Width, Height: Word; Target: Pointer);
+
 
 implementation
 
@@ -105,12 +107,25 @@ procedure X_DrawOpaque(Page: Byte; X, Y: Word; Image: PImage);
 var
    ImageData: PChar;
    Width, Height, StartY, RemPlaneWidth: Word;
+   i: Byte;
+   Plane: Byte;
+   PlaneShift: Byte;
+   PlaneData: array[0..3] of Word;
+   PPlaneData: Pointer;
 begin
      Width := Image^.Width shr 3;
      Height := Image^.Height;
      ImageData := Image^.Data;
      StartY := PageOffset[Page] + Y * PlaneWidth + (X shr 2);
      RemPlaneWidth := PlaneWidth - Image^.Width shr 2;
+
+     Plane := 0;
+     PlaneShift := X mod 4;
+     for i := 0 to 3 do begin
+         PlaneData[i] := (1 shl ((i + PlaneShift) mod 4) shl 8) or (Ord(i + PlaneShift > 3));
+     end;
+
+     PPlaneData := @PlaneData;
 
      asm
         push ds
@@ -120,26 +135,41 @@ begin
         mov ax, $a000
         mov es, ax
 
-        mov al, 2             { set plane operation }
-        mov ah, 1             { plane 1 }
+        mov bx, 0
+
      @DrawPlane:
-        mov dx, ScIndex
-        out dx, ax            { set plane }
+        push es
+        push di
 
-        mov di, StartY        { tile's top left corner in video memory }
+        les di, PPlaneData
 
-        mov dx, Height        { number of rows }
+        mov al, 2                { select plane operation }
+        mov ah, es:[di+bx+1]     { actual plane }
+
+        mov dx, ScIndex          { set plane }
+        out dx, ax
+
+        mov dl, es:[di+bx]       { store x-offset in dx }
+        mov dh, 0
+
+        pop di
+        pop es
+
+        mov di, StartY           { start address }
+        add di, dx               { + x-offset }
+
+        mov dx, Height           { number of rows }
      @DrawRow:
-        mov cx, Width         { copy row }
+        mov cx, Width            { copy row }
         rep movsw
 
-        add di, RemPlaneWidth { next line in video memory }
+        add di, RemPlaneWidth    { next line in video memory }
 
         dec dx
         jnz @DrawRow
 
-        shl ah, 1             { next plane }
-        cmp ah, 16
+        add bl, 2                { next plane }
+        cmp bl, 8
         jne @DrawPlane
 
         pop ds
@@ -569,6 +599,40 @@ begin
         jnz @DrawPlane
 
         pop ds
+     end;
+end;
+
+procedure X_CopyToSysMem(Page: Byte; X, Y, Width, Height: Word; Target: Pointer);
+var
+   Plane: Byte;
+   Pos, XWidth, XP, YP: Word;
+   StartOffset, Offset: Word;
+   StartPlane: Byte;
+   XAdd: Word;
+begin
+     StartOffset := PageOffset[Page] + Y * PlaneWidth + (X shr 2);
+     XWidth := Width shr 2;
+     StartPlane := X and 3;
+     XAdd := 0;
+
+     Pos := 0;
+
+     for Plane := StartPlane to StartPlane + 3 do begin
+         Port[$3ce] := 4;
+         Port[$3cf] := Plane mod 4;
+
+         if Plane > 3 then XAdd := 1;
+
+         Offset := StartOffset;
+
+         for YP := 0 to Height - 1 do begin
+             for XP := 0 to XWidth - 1 do begin
+                 PChar(Target)[Pos] := Chr(Mem[$a000:Offset + XP + XAdd]);
+                 Inc(Pos);
+             end;
+
+             Inc(Offset, PlaneWidth);
+         end;
      end;
 end;
 
