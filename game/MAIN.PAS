@@ -339,14 +339,19 @@ begin
                 PlayerSprites[Player.D]
            );
 
+           PTileX := (Player.X div TileWidth) - NextRedrawX;
+           PTileY := ((Player.Y - Player.Z) div TileHeight) - NextRedrawY;
+           PTileXE := ((Player.X + 32 + TileWidth - 1) div TileWidth) - NextRedrawX;
+           PTileYE := ((Player.Y - Player.Z + 32 + TileHeight - 1) div TileHeight) - NextRedrawY;
+
            DrawTopLayers(
                    NextPage,
                    ColOffset,
                    RowOffset,
-                   10,
-                   10 + 2,
-                   7,
-                   7 + 2,
+                   PTileX,
+                   PTileXE,
+                   PTileY,
+                   PTileYE,
                    NextRedrawX * TileWidth,
                    NextRedrawY * TileHeight
            );
