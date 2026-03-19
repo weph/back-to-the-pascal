@@ -203,6 +203,31 @@ begin
          MapOrigin.Y := Player.Y - 120;
 end;
 
+procedure SaveDirtyRect(Page: Byte; X, Y: Word; var Target: TDirtyRect);
+begin
+     Target.X := X;
+     Target.Y := Y;
+
+     X_CopyToSysMem(
+         Page,
+         Target.X,
+         Target.Y,
+         Target.Image^.Width,
+         Target.Image^.Height,
+         Target.Image^.Data
+     );
+end;
+
+procedure DrawDirtyRect(Page: Byte; DirtyRect: TDirtyRect);
+begin
+     X_DrawOpaque(
+         Page,
+         DirtyRect.X,
+         DirtyRect.Y,
+         DirtyRect.Image
+     );
+end;
+
 procedure MainLoop;
 var
    Running: Boolean;
@@ -259,6 +284,9 @@ begin
      LastRedrawX := -1;
      LastRedrawY := -1;
 
+     SaveDirtyRect(0, Player.X, Player.Y, Player.DirtyRect[0]);
+     SaveDirtyRect(1, Player.X, Player.Y, Player.DirtyRect[1]);
+
      Scroll := true;
      ScrollSpeed := 1;
      NextPage := Page;
@@ -269,31 +297,7 @@ begin
 
            LastMapOrigin := MapOrigin;
 
-           PTileX := (Player.X div TileWidth) - NextRedrawX;
-           PTileY := ((Player.Y - Player.Z) div TileHeight) - NextRedrawY;
-           PTileXE := ((Player.X + 32 + TileWidth - 1) div TileWidth) - NextRedrawX;
-           PTileYE := ((Player.Y - Player.Z + 32 + TileHeight - 1) div TileHeight) - NextRedrawY;
-
-           DrawMap(
-                   NextPage,
-                   ColOffset,
-                   RowOffset,
-                   PTileX,
-                   PTileXE,
-                   PTileY,
-                   PTileYE,
-                   LastRedrawX * TileWidth,
-                   LastRedrawY * TileHeight
-           );
-
-           {X_DrawRect(
-                NextPage,
-                NextRedrawX * TileWidth + PTileX * TileWidth,
-                NextRedrawY * TileHeight + PTileY * TileHeight,
-                NextRedrawX * TileWidth + PTileXE * TileWidth,
-                NextRedrawY * TileHeight + PTileYE * TileHeight,
-                1
-           );}
+           DrawDirtyRect(NextPage, Player.DirtyRect[NextPage]);
 
            Player.Update(Frame);
 
@@ -331,6 +335,8 @@ begin
 
               LastRedrawY := NextRedrawY;
            end;
+
+           SaveDirtyRect(NextPage, Player.X, Player.Y - Player.Z, Player.DirtyRect[NextPage]);
 
            Draw(
                 NextPage,
