@@ -247,7 +247,14 @@ var
    Break: Boolean;
    MaxScrollX, MaxScrollY: Word;
    PTileX, PTileY, PTileXE, PTileYE: Integer;
+   FPS: FPSInfo;
+   FpsString: String;
+   FpsBackground: array[0..1] of TDirtyRect;
 begin
+     FPS.Init(60);
+     New(FpsBackground[0].Image, New(48, 16));
+     New(FpsBackground[1].Image, New(48, 16));
+
      Frame := 0;
      Running := true;
      Page := 0;
@@ -287,12 +294,17 @@ begin
      SaveDirtyRect(0, Player.X, Player.Y, Player.DirtyRect[0]);
      SaveDirtyRect(1, Player.X, Player.Y, Player.DirtyRect[1]);
 
+     SaveDirtyRect(0, 0, 0, FpsBackground[0]);
+     SaveDirtyRect(1, 0, 0, FpsBackground[1]);
+
      Scroll := true;
      ScrollSpeed := 1;
      NextPage := Page;
      C := 0;
      Break := false;
      while Running do begin
+           FPS.Update;
+
            NextPage := (Page + 1) and 1;
 
            LastMapOrigin := MapOrigin;
@@ -305,6 +317,11 @@ begin
 
            ScrollX := MapOrigin.X;
            ScrollY := MapOrigin.Y;
+
+           DrawDirtyRect(NextPage, FpsBackground[NextPage]);
+           SaveDirtyRect(NextPage, ScrollX + 16, ScrollY + 16, FpsBackground[NextPage]);
+           Str(FPS.CurrentFps:0:3, FpsString);
+           X_PutString(NextPage, ScrollX + 16, ScrollY + 16, FpsString);
 
            NextRedrawX := ScrollX div TileWidth;
            NextRedrawY := ScrollY div TileHeight;
