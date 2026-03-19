@@ -2,7 +2,7 @@ unit Player;
 
 interface
 
-uses Types, IsoMap;
+uses Types, IsoMap, Image;
 
 type
     TPlayer = object
@@ -13,8 +13,10 @@ type
         PushCycle: Byte;
         Map: PGameMap;
         LastTurn: LongInt;
+        DirtyRect: array[0..1] of TDirtyRect;
 
         constructor Init(TheMap: PGameMap);
+        destructor Destroy;
         procedure Push;
         procedure Update(Frame: LongInt);
         procedure Turn(Frame: LongInt; Steps: ShortInt);
@@ -64,6 +66,14 @@ end;
 constructor TPlayer.Init(TheMap: PGameMap);
 begin
      Map := TheMap;
+     New(DirtyRect[0].Image, New(32, 32));
+     New(DirtyRect[1].Image, New(32, 32));
+end;
+
+destructor TPlayer.Destroy;
+begin
+     Dispose(DirtyRect[0].Image, Destroy);
+     Dispose(DirtyRect[1].Image, Destroy);
 end;
 
 procedure TPlayer.Push;
