@@ -93,7 +93,7 @@ begin
      Img.Destroy;
 end;
 
-procedure DrawMap(Page: Byte; ColOffset, RowOffset, StartCol, EndCol, StartRow, EndRow: Word; StartX, StartY: Integer);
+procedure DrawMap(Page: Byte; ColOffset, RowOffset, StartCol, EndCol, StartRow, EndRow: Word; Start: TCoordinate);
 var
    Z, Col, Row: Word;
    Tile: Byte;
@@ -111,14 +111,14 @@ begin
                  if Tile = 0 then continue;
 
                  with TilePositions[Row][Col] do begin
-                      Draw(Page, StartX + X, StartY + Y, Tiles[Tile]);
+                      Draw(Page, Start.X + X, Start.Y + Y, Tiles[Tile]);
                  end;
              end;
          end;
      end;
 end;
 
-procedure DrawTopLayers(Page: Byte; ColOffset, RowOffset, StartCol, EndCol, StartRow, EndRow: Word; StartX, StartY: Integer);
+procedure DrawTopLayers(Page: Byte; ColOffset, RowOffset, StartCol, EndCol, StartRow, EndRow: Word; Start: TCoordinate);
 var
    Z, Col, Row: Word;
    Tile: Byte;
@@ -136,7 +136,7 @@ begin
                  if Tile = 0 then continue;
 
                  with TilePositions[Row][Col] do begin
-                      Draw(Page, StartX + X, StartY + Y, Tiles[Tile]);
+                      Draw(Page, Start.X + X, Start.Y + Y, Tiles[Tile]);
                  end;
              end;
          end;
@@ -144,24 +144,24 @@ begin
 end;
 
 
-procedure DrawLastColumn(Page: Byte; ColOffset, RowOffset, StartX, StartY: Word);
+procedure DrawLastColumn(Page: Byte; ColOffset, RowOffset: Word; Start: TCoordinate);
 begin
-     DrawMap(Page, ColOffset, RowOffset, MapCols - 1, MapCols - 1, 0, MapRows - 1, StartX, StartY);
+     DrawMap(Page, ColOffset, RowOffset, MapCols - 1, MapCols - 1, 0, MapRows - 1, Start);
 end;
 
-procedure DrawFirstColumn(Page: Byte; ColOffset, RowOffset, StartX, StartY: Word);
+procedure DrawFirstColumn(Page: Byte; ColOffset, RowOffset: Word; Start: TCoordinate);
 begin
-     DrawMap(Page, ColOffset, RowOffset, 0, 0, 0, MapRows - 1, StartX, StartY);
+     DrawMap(Page, ColOffset, RowOffset, 0, 0, 0, MapRows - 1, Start);
 end;
 
-procedure DrawLastRow(Page: Byte; ColOffset, RowOffset, StartX, StartY: Word);
+procedure DrawLastRow(Page: Byte; ColOffset, RowOffset: Word; Start: TCoordinate);
 begin
-     DrawMap(Page, ColOffset, RowOffset, 0, MapCols - 1, MapRows - 1, MapRows - 1, StartX, StartY);
+     DrawMap(Page, ColOffset, RowOffset, 0, MapCols - 1, MapRows - 1, MapRows - 1, Start);
 end;
 
-procedure DrawFirstRow(Page: Byte; ColOffset, RowOffset, StartX, StartY: Integer);
+procedure DrawFirstRow(Page: Byte; ColOffset, RowOffset: Word; Start: TCoordinate);
 begin
-     DrawMap(Page, ColOffset, RowOffset, 0, MapCols - 1, 0, 0, StartX, StartY);
+     DrawMap(Page, ColOffset, RowOffset, 0, MapCols - 1, 0, 0, Start);
 end;
 
 
@@ -233,14 +233,14 @@ var
    Running: Boolean;
    Page, NextPage: Byte;
    InitialColOffset, InitialRowOffset, ColOffset, RowOffset: Word;
-   RedrawFirst, RedrawLast, RedrawFirstRow, RedrawLastRow: Boolean;
    Scroll: Boolean;
-   LastRedrawX, LastRedrawY: Integer;
-   NextRedrawX, NextRedrawY: Integer;
+   LastRedraw: array[0..1] of TCoordinate;
+   NextRedraw: TCoordinate;
    MemPos: String;
    ScrollSpeed: Integer;
    Player: TPlayer;
    MapOrigin: TCoordinate;
+   MapRedrawStart: TCoordinate;
    ScrollX, ScrollY: LongInt;
    LastMapOrigin: TCoordinate;
    C: Word;
@@ -258,10 +258,6 @@ begin
      Frame := 0;
      Running := true;
      Page := 0;
-     RedrawFirst := false;
-     RedrawLast := false;
-     RedrawFirstRow := false;
-     RedrawLastRow := false;
 
      ScrollX := 0;
      ScrollY := 0;
@@ -284,19 +280,22 @@ begin
      InitialRowOffset := RowOffset;
 
      X_Fill(0);
-     DrawMap(0, ColOffset, RowOffset, 0, MapCols - 1, 0, MapRows - 1, 0, 0);
-     DrawMap(1, ColOffset, RowOffset, 0, MapCols - 1, 0, MapRows - 1, 0, 0);
+     MapRedrawStart.X := 0;
+     MapRedrawStart.Y := 0;
+     DrawMap(0, ColOffset, RowOffset, 0, MapCols - 1, 0, MapRows - 1, MapRedrawStart);
+     DrawMap(1, ColOffset, RowOffset, 0, MapCols - 1, 0, MapRows - 1, MapRedrawStart);
      SetVideoStartAddress(PageOffset[0] + ScreenOffset, 0);
 
-     LastRedrawX := -1;
-     LastRedrawY := -1;
+     for Page := 0 to 1 do begin
+         LastRedraw[Page].X := -1;
+         LastRedraw[Page].Y := -1;
 
-     SaveDirtyRect(0, Player.X, Player.Y, Player.DirtyRect[0]);
-     SaveDirtyRect(1, Player.X, Player.Y, Player.DirtyRect[1]);
+         SaveDirtyRect(Page, Player.X, Player.Y, Player.DirtyRect[Page]);
 
-     SaveDirtyRect(0, 0, 0, FpsBackground[0]);
-     SaveDirtyRect(1, 0, 0, FpsBackground[1]);
+         SaveDirtyRect(Page, 0, 0, FpsBackground[Page]);
+     end;
 
+     Page := 0;
      Scroll := true;
      ScrollSpeed := 1;
      NextPage := Page;
@@ -323,35 +322,29 @@ begin
            Str(FPS.CurrentFps:0:3, FpsString);
            X_PutString(NextPage, ScrollX + 16, ScrollY + 16, FpsString);
 
-           NextRedrawX := ScrollX div TileWidth;
-           NextRedrawY := ScrollY div TileHeight;
+           NextRedraw.X := ScrollX div TileWidth;
+           NextRedraw.Y := ScrollY div TileHeight;
+           MapRedrawStart.X := NextRedraw.X * TileWidth;
+           MapRedrawStart.Y := NextRedraw.Y * TileHeight;
 
-           ColOffset := InitialColOffset + NextRedrawX;
-           RowOffset := InitialRowOffset + NextRedrawY;
+           ColOffset := InitialColOffset + NextRedraw.X;
+           RowOffset := InitialRowOffset + NextRedraw.Y;
 
-           if NextRedrawX <> LastRedrawX then begin
-              if NextRedrawX > LastRedrawX then begin
-                  DrawLastColumn(NextPage, ColOffset, RowOffset, NextRedrawX * TileWidth, NextRedrawY * TileHeight);
-                  RedrawLast := true;
-              end else begin
-                  DrawFirstColumn(NextPage, ColOffset, RowOffset, NextRedrawX * TileWidth, NextRedrawY * TileHeight);
-                  RedrawFirst := true;
-              end;
-
-              LastRedrawX := NextRedrawX;
+           if NextRedraw.X > LastRedraw[NextPage].X then begin
+               DrawLastColumn(NextPage, ColOffset, RowOffset, MapRedrawStart);
+           end else if NextRedraw.X < LastRedraw[NextPage].X then begin
+               DrawFirstColumn(NextPage, ColOffset, RowOffset, MapRedrawStart);
            end;
 
-           if NextRedrawY <> LastRedrawY then begin
-              if NextRedrawY > LastRedrawY then begin
-                  DrawLastRow(NextPage, ColOffset, RowOffset, NextRedrawX * TileWidth, NextRedrawY * TileHeight);
-                  RedrawLastRow := true;
-              end else begin
-                  DrawFirstRow(NextPage, ColOffset, RowOffset, NextRedrawX * TileWidth, NextRedrawY * TileHeight);
-                  RedrawFirstRow := true;
-              end;
+           LastRedraw[NextPage].X := NextRedraw.X;
 
-              LastRedrawY := NextRedrawY;
+           if NextRedraw.Y > LastRedraw[NextPage].Y then begin
+               DrawLastRow(NextPage, ColOffset, RowOffset, MapRedrawStart);
+           end else if NextRedraw.Y < LastRedraw[NextPage].Y then begin
+               DrawFirstRow(NextPage, ColOffset, RowOffset, MapRedrawStart);
            end;
+
+           LastRedraw[NextPage].Y := NextRedraw.Y;
 
            SaveDirtyRect(NextPage, Player.X, Player.Y - Player.Z, Player.DirtyRect[NextPage]);
 
@@ -362,10 +355,10 @@ begin
                 PlayerSprites[Player.D]
            );
 
-           PTileX := (Player.X div TileWidth) - NextRedrawX;
-           PTileY := ((Player.Y - Player.Z) div TileHeight) - NextRedrawY;
-           PTileXE := ((Player.X + 32 + TileWidth - 1) div TileWidth) - NextRedrawX;
-           PTileYE := ((Player.Y - Player.Z + 32 + TileHeight - 1) div TileHeight) - NextRedrawY;
+           PTileX := (Player.X div TileWidth) - NextRedraw.X;
+           PTileY := ((Player.Y - Player.Z) div TileHeight) - NextRedraw.Y;
+           PTileXE := ((Player.X + 32 + TileWidth - 1) div TileWidth) - NextRedraw.X;
+           PTileYE := ((Player.Y - Player.Z + 32 + TileHeight - 1) div TileHeight) - NextRedraw.Y;
 
            DrawTopLayers(
                    NextPage,
@@ -375,8 +368,7 @@ begin
                    PTileXE,
                    PTileY,
                    PTileYE,
-                   NextRedrawX * TileWidth,
-                   NextRedrawY * TileHeight
+                   MapRedrawStart
            );
 
 
@@ -384,27 +376,6 @@ begin
                PageOffset[NextPage] + ScreenOffset + (ScrollY * PlaneWidth) + ScrollX shr 2,
                ScrollX
            );
-
-           if RedrawLast then begin
-              DrawLastColumn(Page, ColOffset, RowOffset, NextRedrawX * TileWidth, NextRedrawY * TileHeight);
-              RedrawLast := false;
-           end;
-
-           if RedrawFirst then begin
-              DrawFirstColumn(Page, ColOffset, RowOffset, NextRedrawX * TileWidth, NextRedrawY * TileHeight);
-              RedrawFirst := false;
-           end;
-
-           if RedrawLastRow then begin
-              DrawLastRow(Page, ColOffset, RowOffset, NextRedrawX * TileWidth, NextRedrawY * TileHeight);
-              RedrawLastRow := false;
-           end;
-
-           if RedrawFirstRow then begin
-              DrawFirstRow(Page, ColOffset, RowOffset, NextRedrawX * TileWidth, NextRedrawY * TileHeight);
-              RedrawFirstRow := false;
-           end;
-
 
            Page := NextPage;
 
