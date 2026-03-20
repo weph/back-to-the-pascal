@@ -35,7 +35,7 @@ procedure X_Draw16x16Opaque(Page: Byte; X, Y: Word; Image: PImage);
 
 procedure X_DrawAlpha(Page: Byte; X, Y: Word; Image: PImage);
 
-procedure X_CopyToSysMem(Page: Byte; X, Y, Width, Height: Word; Target: Pointer);
+procedure X_CopyToSysMem(Page: Byte; X, Y: Word; Width, Height: Byte; Target: Pointer);
 
 
 implementation
@@ -602,37 +602,76 @@ begin
      end;
 end;
 
-procedure X_CopyToSysMem(Page: Byte; X, Y, Width, Height: Word; Target: Pointer);
+{
+  Copy up to 256x256 pixels from video memory to system memory
+
+  ds:si video memory
+  es:di destination
+
+  ah    plane (start plane-start plane+3)
+        start plane is derived from X (e.g. 1 if X=5, 2 if X=18)
+  al    actual plane (0-3) (essentially ah mod 4)
+  bh    plane counter
+  bl    line height
+  cx    line width
+  dx    gc index/data
+}
+procedure X_CopyToSysMem(Page: Byte; X, Y: Word; Width, Height: Byte; Target: Pointer);
 var
-   Plane: Byte;
-   Pos, XWidth, XP, YP: Word;
-   StartOffset, Offset: Word;
-   StartPlane: Byte;
-   XAdd: Word;
+   LineWidth, LineOffset: Word;
+   StartOffset: Word;
 begin
      StartOffset := PageOffset[Page] + Y * PlaneWidth + (X shr 2);
-     XWidth := Width shr 2;
-     StartPlane := X and 3;
-     XAdd := 0;
+     LineWidth := Width shr 2;
+     LineOffset := PlaneWidth - LineWidth;
 
-     Pos := 0;
+     asm
+        push ds
 
-     for Plane := StartPlane to StartPlane + 3 do begin
-         Port[$3ce] := 4;
-         Port[$3cf] := Plane mod 4;
+        mov ax, $a000       { initialize ds to video segment }
+        mov ds, ax
 
-         if Plane > 3 then XAdd := 1;
+        les di, Target      { initialize es:di to target memory }
 
-         Offset := StartOffset;
+        mov dx, $3ce        { select read map select register in gc index}
+        mov al, 4
+        out dx, al
 
-         for YP := 0 to Height - 1 do begin
-             for XP := 0 to XWidth - 1 do begin
-                 PChar(Target)[Pos] := Chr(Mem[$a000:Offset + XP + XAdd]);
-                 Inc(Pos);
-             end;
+        mov dx, $3cf        { set dx to gc data }
 
-             Inc(Offset, PlaneWidth);
-         end;
+        mov ax, X           { store start plane in ah }
+        and ax, 3
+        shl ax, 8
+
+        mov bh, 4           { set number of planes }
+
+     @GetPlane:
+        mov al, ah          { write actual plane (ah mod 4) to gc data }
+        and al, 3
+        out dx, al
+
+        mov bl, Height      { number of lines to copy }
+
+        mov si, StartOffset { start offset in video memory }
+
+        cmp ah, 4           { shift start offset by one if plane wraps around }
+        jl @NextRow
+        inc si
+
+     @NextRow:
+        mov cx, LineWidth   { copy line }
+        rep movsb
+
+        add si, LineOffset  { go to next line in video memory }
+
+        dec bl              { repeat for all lines }
+        jnz @NextRow
+
+        inc ah              { repeat for all planes }
+        dec bh
+        jnz @GetPlane
+
+        pop ds
      end;
 end;
 
