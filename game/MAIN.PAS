@@ -242,7 +242,6 @@ var
    MapOrigin: TCoordinate;
    MapRedrawStart: TCoordinate;
    ScrollX, ScrollY: LongInt;
-   LastMapOrigin: TCoordinate;
    C: Word;
    Break: Boolean;
    MaxScrollX, MaxScrollY: Word;
@@ -305,8 +304,6 @@ begin
            FPS.Update;
 
            NextPage := (Page + 1) and 1;
-
-           LastMapOrigin := MapOrigin;
 
            DrawDirtyRect(NextPage, Player.DirtyRect[NextPage]);
 
