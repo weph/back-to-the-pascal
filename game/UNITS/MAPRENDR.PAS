@@ -105,6 +105,7 @@ var
    NextRedraw: TCoordinate;
    MapRedrawStart: TCoordinate;
 begin
+     if Map^.Depth < 2 then Exit;
      if Sprite^.Z = 65535 then Exit;
 
      NextRedraw.X := Scroll.X div TileWidth;

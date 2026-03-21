@@ -2,7 +2,7 @@ unit Player;
 
 interface
 
-uses Types, GameMap, Image, Sprite;
+uses Types, IsoMap, Image, Sprite;
 
 type
     PPlayer = ^TPlayer;

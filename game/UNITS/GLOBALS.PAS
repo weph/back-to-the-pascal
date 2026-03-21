@@ -5,7 +5,7 @@ interface
 uses GameMap;
 
 const
-     TileWidth = 16;
+     TileWidth = 32;
      TileHeight = 16;
 
      ScreenWidth = 320;

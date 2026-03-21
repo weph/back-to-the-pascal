@@ -15,7 +15,7 @@ uses
     Malloc,
     Globals,
     Renderer,
-    TopDown;
+    Iso;
 
 var
    Frame: LongInt;
@@ -25,7 +25,7 @@ var
    MaxScrollX, MaxScrollY: Word;
 begin
      MaxScrollX := (Map.Width * TileWidth) - 320 - 2 * TileWidth;
-     MaxScrollY := (Map.Height * TileHeight) - 240 - 2 * TileHeight;
+     MaxScrollY := ((Map.Height div 2) * TileHeight) - 240 - 2 * TileHeight;
 
      if Player.X < 160 then
          MapOrigin.X := 0
@@ -64,8 +64,8 @@ begin
 
      Player.Init(@Map, 'assets\player.pcx');
      Player.D := S;
-     Player.X := 16;
-     Player.Y := 16;
+     Player.X := 64;
+     Player.Y := 64;
 
      UpdateMapScroll(Player, MapScroll);
 
@@ -85,7 +85,7 @@ begin
            Player.Update(Frame);
            UpdateMapScroll(Player, MapScroll);
 
-           FPS.X := MapScroll.X + 16;
+           FPS.X := MapScroll.X + 32;
            FPS.Y := MapScroll.Y + 16;
 
            R_Render(Page, MapScroll);
@@ -110,15 +110,15 @@ begin
 end;
 
 var
-   MapRenderer: TTopDownMapRenderer;
+   MapRenderer: TIsometricMapRenderer;
 
 begin
      InitModeX;
      SetScreenWidth(LogicalScreenWidth);
      X_Fill(0);
 
-     Map.Init('assets\race2.map');
-     MapRenderer.Init(@Map, 'assets\race2.pcx');
+     Map.Init('assets\iso2.map');
+     MapRenderer.Init(@Map, 'assets\iso2.pcx');
      R_Init(@MapRenderer);
 
      MainLoop;

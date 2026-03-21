@@ -71,6 +71,7 @@ const mapFormat = {
 
         let currentX = 0
         let currentY = 0
+        let currentRowHeight = 0;
         tileMapping.forEach((v, k) => {
             if (k === -1) {
                 return
@@ -78,6 +79,7 @@ const mapFormat = {
 
             const tile = map.tilesets[0].tile(k)
             const imageRect = tile.imageRect
+            currentRowHeight = Math.max(currentRowHeight, imageRect.height);
 
             for (let tx = 0; tx < imageRect.width; tx++) {
                 for (let ty = 0; ty < imageRect.height; ty++) {
@@ -86,10 +88,12 @@ const mapFormat = {
                 }
             }
 
-            currentX += 16
+            currentX += imageRect.width
             if (currentX >= 320) {
                 currentX = 0
-                currentY += 16
+                currentY += currentRowHeight
+
+                currentRowHeight = 0
             }
         })
 
