@@ -1,4 +1,4 @@
-unit IsoMap;
+unit GameMap;
 
 interface
 
@@ -8,8 +8,8 @@ const
     MaxDepth = 4;
 
 type
-    PGameMap = ^GameMap;
-    GameMap = object
+    PGameMap = ^TGameMap;
+    TGameMap = object
         Depth, WidthInColumns, HeightInRows: Byte;
         NumTiles: Byte;
         Data: Array[0..MaxDepth - 1,0..MaxHeight - 1,0..MaxWidth - 1] of Byte;
@@ -23,7 +23,7 @@ type
 
 implementation
 
-constructor GameMap.Init;
+constructor TGameMap.Init;
 var
    MapFile: file of Byte;
    Line: String;
@@ -55,7 +55,7 @@ begin
      Close(MapFile);
 end;
 
-function GameMap.TileAt;
+function TGameMap.TileAt;
 var
    Index: Word;
 begin
@@ -68,7 +68,7 @@ begin
      TileAt := Data[Z][Y][X]
 end;
 
-function GameMap.IsWalkable;
+function TGameMap.IsWalkable;
 var
    Z: Byte;
    Tile: Byte;

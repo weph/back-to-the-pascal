@@ -2,7 +2,7 @@ unit Player;
 
 interface
 
-uses Types, IsoMap, Image;
+uses Types, GameMap, Image;
 
 type
     TPlayer = object

@@ -2,7 +2,7 @@
 program Main;
 uses
     Crt,
-    IsoMap,
+    GameMap,
     VGA,
     Image,
     PCXImg,
@@ -18,7 +18,7 @@ const
      MapRows = LogicalScreenHeight div TileHeight;
 
 var
-   Map: GameMap;
+   Map: TGameMap;
    TilePositions: array[0..MapRows-1,0..MapCols-1] of TCoordinate;
    Tiles: array[1..255] of PImage;
    PlayerSprites: array[TDirection] of PImage;
