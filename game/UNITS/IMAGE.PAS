@@ -6,18 +6,21 @@ interface
 type
     PImage = ^TImage;
     TImage = object
-        Width, Height: Word;
-        MemSize: Word;
-        Data: PChar;
-        TransparencyEncoded: Boolean;
+        public
+            Width, Height: Word;
+            MemSize: Word;
+            Data: PChar;
+            TransparencyEncoded: Boolean;
 
-        constructor Init(IWidth, IHeight: Word; IData: Pointer);
-        constructor New(IWidth, IHeight: Word);
-        destructor Destroy;
-        procedure Fill(Color: Byte);
-        procedure Encode;
-        procedure TileEncode;
-        procedure TransparencyEncode;
+            constructor Init(IWidth, IHeight: Word; IData: Pointer);
+            constructor New(IWidth, IHeight: Word);
+            destructor Destroy;
+            procedure Fill(Color: Byte);
+            procedure Encode;
+
+        private
+            procedure OpaqueEncode;
+            procedure TransparencyEncode;
     end;
 
 implementation
@@ -64,10 +67,10 @@ begin
          end;
      end;
 
-     TileEncode;
+     OpaqueEncode;
 end;
 
-procedure TImage.TileEncode;
+procedure TImage.OpaqueEncode;
 var
    i, Pos, CurrentLength: Word;
    Plane, X, Y, PrevY: Word;
