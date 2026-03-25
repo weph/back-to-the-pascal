@@ -16,9 +16,9 @@ type
             constructor New(IWidth, IHeight: Word);
             destructor Destroy;
             procedure Fill(Color: Byte);
-            procedure Encode;
 
         private
+            procedure Encode;
             procedure OpaqueEncode;
             procedure TransparencyEncode;
     end;
@@ -34,6 +34,7 @@ begin
      Data := IData;
      MemSize := Width * Height;
      TransparencyEncoded := false;
+     Encode;
 end;
 
 constructor TImage.New;

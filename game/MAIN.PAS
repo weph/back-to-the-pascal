@@ -49,7 +49,6 @@ begin
      for Y := 0 to 11 do begin
          for X := 0 to 19 do begin
              Tiles[Y * 20 + X + 1] := Img.ImageAt(X * 16, Y * 16, 16, 16);
-             Tiles[Y * 20 + X + 1]^.Encode;
          end;
      end;
 
@@ -74,21 +73,13 @@ begin
      Img.Init('assets\player.pcx');
 
      PlayerSprites[S] := Img.ImageAt(0, 0, 32, 32);
-     PlayerSprites[S]^.Encode;
      PlayerSprites[SW] := Img.ImageAt(32, 0, 32, 32);
-     PlayerSprites[SW]^.Encode;
      PlayerSprites[W] := Img.ImageAt(64, 0, 32, 32);
-     PlayerSprites[W]^.Encode;
      PlayerSprites[NW] := Img.ImageAt(96, 0, 32, 32);
-     PlayerSprites[NW]^.Encode;
      PlayerSprites[N] := Img.ImageAt(128, 0, 32, 32);
-     PlayerSprites[N]^.Encode;
      PlayerSprites[NE] := Img.ImageAt(160, 0, 32, 32);
-     PlayerSprites[NE]^.Encode;
      PlayerSprites[E] := Img.ImageAt(192, 0, 32, 32);
-     PlayerSprites[E]^.Encode;
      PlayerSprites[SE] := Img.ImageAt(224, 0, 32, 32);
-     PlayerSprites[SE]^.Encode;
 
      Img.Destroy;
 end;
