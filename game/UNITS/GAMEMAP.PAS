@@ -2,17 +2,13 @@ unit GameMap;
 
 interface
 
-const
-    MaxWidth = 120;
-    MaxHeight = 100;
-    MaxDepth = 4;
-
 type
     PGameMap = ^TGameMap;
     TGameMap = object
-        Depth, WidthInColumns, HeightInRows: Byte;
+        LayerSize: Word;
+        Depth, Width, Height: Byte;
         NumTiles: Byte;
-        Data: Array[0..MaxDepth - 1,0..MaxHeight - 1,0..MaxWidth - 1] of Byte;
+        Layers: array[0..255] of PChar;
         Walkable: Array[0..255] of Boolean;
 
         constructor Init(Filename: String);
@@ -30,14 +26,20 @@ var
    i, X, Y, Z: Word;
    LL: Word;
    W: Byte;
+   Tile: Byte;
 begin
      Assign(MapFile, Filename);
      Reset(MapFile);
 
-     Read(MapFile, WidthInColumns);
-     Read(MapFile, HeightInRows);
+     Read(MapFile, Width);
+     Read(MapFile, Height);
      Read(MapFile, Depth);
      Read(MapFile, NumTiles);
+
+     LayerSize := Width * Height;
+     for i := 0 to Depth - 1 do begin
+         GetMem(Layers[i], LayerSize);
+     end;
 
      for i := 0 to NumTiles - 1 do begin
          Read(MapFile, W);
@@ -45,9 +47,9 @@ begin
      end;
 
      for Z := 0 to Depth - 1 do begin
-         for Y := 0 to HeightInRows - 1 do begin
-             for X := 0 to WidthInColumns - 1 do begin
-                 Read(MapFile, Data[Z][Y][X]);
+         for Y := 0 to Height - 1 do begin
+             for X := 0 to Width - 1 do begin
+                 Read(MapFile, Byte(Layers[Z][Y * Width + X]));
              end;
          end;
      end;
@@ -59,13 +61,13 @@ function TGameMap.TileAt;
 var
    Index: Word;
 begin
-     if (X > MaxWidth) or (Y > MaxHeight) or (Z > MaxDepth) then begin
+     if (X >= Width) or (Y >= Height) or (Z >= Depth) then begin
         TileAt := 0;
         Exit;
      end;
 
 
-     TileAt := Data[Z][Y][X]
+     TileAt := Byte(Layers[Z][Y * Width + X]);
 end;
 
 function TGameMap.IsWalkable;
@@ -74,7 +76,7 @@ var
    Tile: Byte;
 begin
      for Z := 0 to Depth - 1 do begin
-         Tile := Data[Z][Y][X];
+         Tile := Byte(Layers[Z][Y * Width + X]);
 
          if Tile = 0 then continue;
 

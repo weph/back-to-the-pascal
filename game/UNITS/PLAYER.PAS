@@ -157,10 +157,10 @@ begin
 
      if X < 16 then X := 16;
      if Y < 16 then Y := 16;
-     if X > (Map^.WidthInColumns * TileWidth - 48) then
-        X := Map^.WidthInColumns * TileWidth - 48;
-     if Y > (Map^.HeightInRows * TileHeight - 48) then
-        Y := Map^.HeightInRows * TileHeight - 48;
+     if X > (Map^.Width * TileWidth - 48) then
+        X := Map^.Width * TileWidth - 48;
+     if Y > (Map^.Height * TileHeight - 48) then
+        Y := Map^.Height * TileHeight - 48;
 
 end;
 

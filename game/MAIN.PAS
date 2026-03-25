@@ -94,8 +94,8 @@ begin
          for Row := StartRow to EndRow do begin
              for Col := StartCol to EndCol do begin
                  Tile := Map.TileAt(
-                     (ColOffset + Col) mod Map.WidthInColumns,
-                     (RowOffset + Row) mod Map.HeightInRows,
+                     (ColOffset + Col) mod Map.Width,
+                     (RowOffset + Row) mod Map.Height,
                      Z
                  );
 
@@ -119,8 +119,8 @@ begin
          for Row := StartRow to EndRow do begin
              for Col := StartCol to EndCol do begin
                  Tile := Map.TileAt(
-                     (ColOffset + Col) mod Map.WidthInColumns,
-                     (RowOffset + Row) mod Map.HeightInRows,
+                     (ColOffset + Col) mod Map.Width,
+                     (RowOffset + Row) mod Map.Height,
                      Z
                  );
 
@@ -176,8 +176,8 @@ procedure UpdateMapScroll(var Player: TPlayer; var MapOrigin: TCoordinate);
 var
    MaxScrollX, MaxScrollY: Word;
 begin
-     MaxScrollX := (Map.WidthInColumns * TileWidth) - 320 - 2 * TileWidth;
-     MaxScrollY := (Map.HeightInRows * TileHeight) - 240 - 2 * TileHeight;
+     MaxScrollX := (Map.Width * TileWidth) - 320 - 2 * TileWidth;
+     MaxScrollY := (Map.Height * TileHeight) - 240 - 2 * TileHeight;
 
      if Player.X < 160 then
          MapOrigin.X := 0
@@ -248,8 +248,8 @@ begin
      Running := true;
      Page := 0;
 
-     MaxScrollX := (Map.WidthInColumns * TileWidth) - 320 - TileWidth;
-     MaxScrollY := (Map.HeightInRows * TileHeight) - 240 - TileHeight;
+     MaxScrollX := (Map.Width * TileWidth) - 320 - TileWidth;
+     MaxScrollY := (Map.Height * TileHeight) - 240 - TileHeight;
 
      Player.Init(@Map);
      Player.D := S;
