@@ -172,7 +172,7 @@ begin
      end;
 end;
 
-procedure UpdateMapOrigin(var Player: TPlayer; var MapOrigin: TCoordinate);
+procedure UpdateMapScroll(var Player: TPlayer; var MapOrigin: TCoordinate);
 var
    MaxScrollX, MaxScrollY: Word;
 begin
@@ -230,9 +230,8 @@ var
    MemPos: String;
    ScrollSpeed: Integer;
    Player: TPlayer;
-   MapOrigin: TCoordinate;
+   MapScroll: TCoordinate;
    MapRedrawStart: TCoordinate;
-   ScrollX, ScrollY: LongInt;
    C: Word;
    Break: Boolean;
    MaxScrollX, MaxScrollY: Word;
@@ -249,22 +248,20 @@ begin
      Running := true;
      Page := 0;
 
-     ScrollX := 0;
-     ScrollY := 0;
      MaxScrollX := (Map.WidthInColumns * TileWidth) - 320 - TileWidth;
      MaxScrollY := (Map.HeightInRows * TileHeight) - 240 - TileHeight;
 
      Player.Init(@Map);
      Player.D := S;
-     Player.X := 64;
+     Player.X := 16;
      Player.Y := 16;
      Player.Z := 0;
      Player.Speed := 0;
 
-     UpdateMapOrigin(Player, MapOrigin);
+     UpdateMapScroll(Player, MapScroll);
 
-     ColOffset := MapOrigin.X div TileWidth;
-     RowOffset := MapOrigin.Y div TileHeight;
+     ColOffset := MapScroll.X div TileWidth;
+     RowOffset := MapScroll.Y div TileHeight;
 
      InitialColOffset := ColOffset;
      InitialRowOffset := RowOffset;
@@ -300,18 +297,15 @@ begin
 
            Player.Update(Frame);
 
-           UpdateMapOrigin(Player, MapOrigin);
-
-           ScrollX := MapOrigin.X;
-           ScrollY := MapOrigin.Y;
+           UpdateMapScroll(Player, MapScroll);
 
            DrawDirtyRect(NextPage, FpsBackground[NextPage]);
-           SaveDirtyRect(NextPage, ScrollX + 16, ScrollY + 16, FpsBackground[NextPage]);
+           SaveDirtyRect(NextPage, MapScroll.X + 16, MapScroll.Y + 16, FpsBackground[NextPage]);
            Str(FPS.CurrentFps:0:3, FpsString);
-           X_PutString(NextPage, ScrollX + 16, ScrollY + 16, FpsString);
+           X_PutString(NextPage, MapScroll.X + 16, MapScroll.Y + 16, FpsString);
 
-           NextRedraw.X := ScrollX div TileWidth;
-           NextRedraw.Y := ScrollY div TileHeight;
+           NextRedraw.X := MapScroll.X div TileWidth;
+           NextRedraw.Y := MapScroll.Y div TileHeight;
            MapRedrawStart.X := NextRedraw.X * TileWidth;
            MapRedrawStart.Y := NextRedraw.Y * TileHeight;
 
@@ -361,8 +355,8 @@ begin
 
 
            SetVideoStartAddress(
-               PageOffset[NextPage] + ScreenOffset + (ScrollY * PlaneWidth) + ScrollX shr 2,
-               ScrollX
+               PageOffset[NextPage] + ScreenOffset + (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2,
+               MapScroll.X
            );
 
            Page := NextPage;
