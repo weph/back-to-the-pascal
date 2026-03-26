@@ -39,12 +39,13 @@ const mapFormat = {
             }
         }
 
+        const file = new BinaryFile(fileName, BinaryFile.WriteOnly)
+        file.write(Uint16Array.from([boundingRect.width, boundingRect.height]).buffer)
+        file.write(Uint8Array.from([map.layerCount, tileMapping.size - 1]).buffer)
+
         const data = []
 
-        data.push(boundingRect.width)
-        data.push(boundingRect.height)
-        data.push(map.layerCount)
-        data.push(tileMapping.size - 1)
+        tiled.log(`Num tiles: ${tileMapping.size - 1}`)
 
         tileMapping.forEach((v, k) => {
             if (k === -1) {
@@ -56,9 +57,6 @@ const mapFormat = {
 
         data.push(...mapData)
 
-        tiled.log(data.join(', '))
-
-        const file = new BinaryFile(fileName, BinaryFile.WriteOnly)
         file.write(Uint8Array.from(data).buffer)
         file.commit()
 

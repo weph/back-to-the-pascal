@@ -5,8 +5,9 @@ interface
 type
     PGameMap = ^TGameMap;
     TGameMap = object
-        LayerSize: Word;
-        Depth, Width, Height: Byte;
+        LayerSize: LongInt;
+        Width, Height: LongInt;
+        Depth: Byte;
         NumTiles: Byte;
         Layers: array[0..255] of PChar;
         Walkable: Array[0..255] of Boolean;
@@ -20,44 +21,44 @@ type
 
 implementation
 
-uses Malloc;
+uses Malloc, VGA, Debug;
 
 constructor TGameMap.Init;
 var
-   MapFile: file of Byte;
+   MapFile: file;
    Line: String;
    i, X, Y, Z: Word;
    LL: Word;
    W: Byte;
    Tile: Byte;
+   SW: PStopwatch;
 begin
-     Assign(MapFile, Filename);
-     Reset(MapFile);
+     SW := Profiler^.Stopwatch('TGameMap.Init');
+     SW^.Start;
 
-     Read(MapFile, Width);
-     Read(MapFile, Height);
-     Read(MapFile, Depth);
-     Read(MapFile, NumTiles);
+     Assign(MapFile, Filename);
+     Reset(MapFile, 1);
+
+     BlockRead(MapFile, Width, 2);
+     BlockRead(MapFile, Height, 2);
+     BlockRead(MapFile, Depth, 1);
+     BlockRead(MapFile, NumTiles, 1);
 
      LayerSize := Width * Height;
-     for i := 0 to Depth - 1 do begin
-         M_Alloc(Layers[i], LayerSize);
-     end;
 
      for i := 0 to NumTiles - 1 do begin
-         Read(MapFile, W);
+         BlockRead(MapFile, W, 1);
          Walkable[i + 1] := W = 1;
      end;
 
      for Z := 0 to Depth - 1 do begin
-         for Y := 0 to Height - 1 do begin
-             for X := 0 to Width - 1 do begin
-                 Read(MapFile, Byte(Layers[Z][Y * Width + X]));
-             end;
-         end;
+         M_Alloc(Layers[Z], LayerSize);
+         BlockRead(MapFile, Layers[Z]^, LayerSize);
      end;
 
      Close(MapFile);
+
+     SW^.Stop;
 end;
 
 destructor TGameMap.Destroy;

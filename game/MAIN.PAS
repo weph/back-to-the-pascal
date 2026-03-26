@@ -394,8 +394,8 @@ begin
 
      LoadPlayer;
 
-     LoadTiles('assets\race.pcx');
-     Map.Init('assets\race.map');
+     LoadTiles('assets\race2.pcx');
+     Map.Init('assets\race2.map');
      InitTilePositions;
 
      MainLoop;
@@ -405,5 +405,7 @@ begin
      Map.Destroy;
      FreeTiles;
      FreePlayer;
+
+     Profiler^.Print;
      M_Debug;
 end.
