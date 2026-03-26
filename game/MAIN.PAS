@@ -11,7 +11,8 @@ uses
     ModeX,
     Types,
     Player,
-    Keyboard;
+    Keyboard,
+    Malloc;
 
 const
      MapCols = LogicalScreenWidth div TileWidth;
@@ -31,7 +32,6 @@ begin
      else
          X_Draw16x16Opaque(Page, X, Y, Image);
 end;
-
 
 procedure LoadTiles(Filename: String);
 var
@@ -82,6 +82,18 @@ begin
      PlayerSprites[SE] := Img.ImageAt(224, 0, 32, 32);
 
      Img.Destroy;
+end;
+
+procedure FreePlayer;
+begin
+     Dispose(PlayerSprites[S], Destroy);
+     Dispose(PlayerSprites[SW], Destroy);
+     Dispose(PlayerSprites[W], Destroy);
+     Dispose(PlayerSprites[NW], Destroy);
+     Dispose(PlayerSprites[N], Destroy);
+     Dispose(PlayerSprites[NE], Destroy);
+     Dispose(PlayerSprites[E], Destroy);
+     Dispose(PlayerSprites[SE], Destroy);
 end;
 
 procedure DrawMap(Page: Byte; ColOffset, RowOffset, StartCol, EndCol, StartRow, EndRow: Word; Start: TCoordinate);
@@ -369,6 +381,10 @@ begin
 
            Inc(Frame);
      end;
+
+     Dispose(FpsBackground[0].Image, Destroy);
+     Dispose(FpsBackground[1].Image, Destroy);
+     Player.Destroy;
 end;
 
 begin
@@ -386,5 +402,8 @@ begin
 
      SetVideoMode(3);
 
+     Map.Destroy;
      FreeTiles;
+     FreePlayer;
+     M_Debug;
 end.

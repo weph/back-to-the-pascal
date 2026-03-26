@@ -12,12 +12,15 @@ type
         Walkable: Array[0..255] of Boolean;
 
         constructor Init(Filename: String);
+        destructor Destroy;
         function TileAt(X, Y, Z: Word): Byte;
         function IsWalkable(X, Y: Word): Boolean;
     end;
 
 
 implementation
+
+uses Malloc;
 
 constructor TGameMap.Init;
 var
@@ -38,7 +41,7 @@ begin
 
      LayerSize := Width * Height;
      for i := 0 to Depth - 1 do begin
-         GetMem(Layers[i], LayerSize);
+         M_Alloc(Layers[i], LayerSize);
      end;
 
      for i := 0 to NumTiles - 1 do begin
@@ -55,6 +58,15 @@ begin
      end;
 
      Close(MapFile);
+end;
+
+destructor TGameMap.Destroy;
+var
+   i: Byte;
+begin
+     for i := 0 to Depth - 1 do begin
+         M_Free(Layers[i], LayerSize);
+     end;
 end;
 
 function TGameMap.TileAt;

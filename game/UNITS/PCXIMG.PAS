@@ -41,6 +41,8 @@ type
 
 implementation
 
+uses Malloc;
+
 constructor PcxImage.Init(Filename: String);
 var
    Image: File;
@@ -54,7 +56,7 @@ begin
 
      BlockRead(Image, Header, SizeOf(Header));
      DataLen := (Header.XMax + 1) * (Header.YMax + 1);
-     GetMem(Data, DataLen);
+     M_Alloc(Data, DataLen);
 
      CurrentPos := 0;
 
@@ -87,7 +89,7 @@ end;
 
 destructor PcxImage.Destroy;
 begin
-     FreeMem(Data, DataLen);
+     M_Free(Data, DataLen);
 end;
 
 function PcxImage.Width;
@@ -106,11 +108,7 @@ var
    Result: PImage;
    Temp: Pointer;
 begin
-     New(Result);
-     Result^.Width := W;
-     Result^.Height := H;
-     Result^.MemSize := W * H;
-     GetMem(Temp, W * H);
+     M_Alloc(Temp, W * H);
 
      i := 0;
      for Yp := Y to Y + H - 1 do

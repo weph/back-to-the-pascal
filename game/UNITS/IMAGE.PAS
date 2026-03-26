@@ -25,7 +25,7 @@ type
 
 implementation
 
-uses FMem;
+uses FMem, Malloc;
 
 constructor TImage.Init;
 begin
@@ -43,13 +43,13 @@ begin
      Height := IHeight;
      MemSize := Width * Height;
      TransparencyEncoded := false;
-     GetMem(Data, MemSize);
+     M_Alloc(Data, MemSize);
      Fill(0);
 end;
 
 destructor TImage.Destroy;
 begin
-     FreeMem(Data, MemSize);
+     M_Free(Data, MemSize);
 end;
 
 procedure TImage.Fill(Color: Byte);
@@ -79,7 +79,7 @@ var
    Temp: PChar;
    Result: PImage;
 begin
-     GetMem(Temp, MemSize);
+     M_Alloc(Temp, MemSize);
 
      Pos := 0;
 
@@ -95,7 +95,7 @@ begin
      end;
 
      FastMove(Temp^, Data^, MemSize);
-     FreeMem(Temp, MemSize);
+     M_Free(Temp, MemSize);
 end;
 
 procedure TImage.TransparencyEncode;
@@ -107,7 +107,7 @@ var
    Temp: PChar;
 begin
     TempSize := Width * Height * 4;
-    GetMem(Temp, TempSize);
+    M_Alloc(Temp, TempSize);
 
     Pos := 0;
 
@@ -168,15 +168,15 @@ begin
         end;
     end;
 
-    FreeMem(Data, MemSize);
+    M_Free(Data, MemSize);
 
     MemSize := Pos;
 
-    GetMem(Data, MemSize);
+    M_Alloc(Data, MemSize);
     FastMove(Temp^, Data^, MemSize);
     TransparencyEncoded := true;
 
-    FreeMem(Temp, TempSize);
+    M_Free(Temp, TempSize);
 end;
 
 end.
