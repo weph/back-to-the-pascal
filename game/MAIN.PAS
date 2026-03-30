@@ -96,20 +96,22 @@ begin
      Dispose(PlayerSprites[SE], Destroy);
 end;
 
-procedure DrawMap(Page: Byte; ColOffset, RowOffset, StartCol, EndCol, StartRow, EndRow: Word; Start: TCoordinate);
+procedure DrawPartialMap(
+    Page: Byte;
+    ColOffset, RowOffset: Word;
+    StartLayer, EndLayer: Byte;
+    StartCol, EndCol: Word;
+    StartRow, EndRow: Word;
+    Start: TCoordinate
+);
 var
    Z, Col, Row: Word;
    Tile: Byte;
-   SW: PStopwatch;
 begin
-     for Z := 0 to Map.Depth - 1 do begin
+     for Z := StartLayer to EndLayer do begin
          for Row := StartRow to EndRow do begin
              for Col := StartCol to EndCol do begin
-                 Tile := Map.TileAt(
-                     (ColOffset + Col) mod Map.Width,
-                     (RowOffset + Row) mod Map.Height,
-                     Z
-                 );
+                 Tile := Map.TileAt(ColOffset + Col, RowOffset + Row, Z);
 
                  if Tile = 0 then continue;
 
@@ -121,50 +123,77 @@ begin
      end;
 end;
 
-procedure DrawTopLayers(Page: Byte; ColOffset, RowOffset, StartCol, EndCol, StartRow, EndRow: Word; Start: TCoordinate);
-var
-   Z, Col, Row: Word;
-   Tile: Byte;
-   SW: PStopwatch;
+procedure DrawMap(Page: Byte; ColOffset, RowOffset, StartCol, EndCol, StartRow, EndRow: Word; Start: TCoordinate);
 begin
-     for Z := 1 to Map.Depth - 1 do begin
-         for Row := StartRow to EndRow do begin
-             for Col := StartCol to EndCol do begin
-                 Tile := Map.TileAt(
-                     (ColOffset + Col) mod Map.Width,
-                     (RowOffset + Row) mod Map.Height,
-                     Z
-                 );
+     DrawPartialMap(
+         Page,
+         ColOffset, RowOffset,
+         0, Map.Depth - 1,
+         StartCol, EndCol,
+         StartRow, EndRow,
+         Start
+     );
+end;
 
-                 if Tile = 0 then continue;
-
-                 with TilePositions[Row][Col] do begin
-                      Draw(Page, Start.X + X, Start.Y + Y, Tiles[Tile]);
-                 end;
-             end;
-         end;
-     end;
+procedure DrawTopLayers(Page: Byte; ColOffset, RowOffset, StartCol, EndCol, StartRow, EndRow: Word; Start: TCoordinate);
+begin
+     DrawPartialMap(
+         Page,
+         ColOffset, RowOffset,
+         1, Map.Depth - 1,
+         StartCol, EndCol,
+         StartRow, EndRow,
+         Start
+     );
 end;
 
 
 procedure DrawLastColumn(Page: Byte; ColOffset, RowOffset: Word; Start: TCoordinate);
 begin
-     DrawMap(Page, ColOffset, RowOffset, MapCols - 1, MapCols - 1, 0, MapRows - 1, Start);
+     DrawPartialMap(
+         Page,
+         ColOffset, RowOffset,
+         0, Map.Depth - 1,
+         MapCols - 1, MapCols - 1,
+         0, MapRows - 1,
+         Start
+     );
 end;
 
 procedure DrawFirstColumn(Page: Byte; ColOffset, RowOffset: Word; Start: TCoordinate);
 begin
-     DrawMap(Page, ColOffset, RowOffset, 0, 0, 0, MapRows - 1, Start);
+     DrawPartialMap(
+         Page,
+         ColOffset, RowOffset,
+         0, Map.Depth - 1,
+         0, 0,
+         0, MapRows - 1,
+         Start
+     );
 end;
 
 procedure DrawLastRow(Page: Byte; ColOffset, RowOffset: Word; Start: TCoordinate);
 begin
-     DrawMap(Page, ColOffset, RowOffset, 0, MapCols - 1, MapRows - 1, MapRows - 1, Start);
+     DrawPartialMap(
+         Page,
+         ColOffset, RowOffset,
+         0, Map.Depth - 1,
+         0, MapCols - 1,
+         MapRows - 1, MapRows - 1,
+         Start
+     );
 end;
 
 procedure DrawFirstRow(Page: Byte; ColOffset, RowOffset: Word; Start: TCoordinate);
 begin
-     DrawMap(Page, ColOffset, RowOffset, 0, MapCols - 1, 0, 0, Start);
+     DrawPartialMap(
+         Page,
+         ColOffset, RowOffset,
+         0, Map.Depth - 1,
+         0, MapCols - 1,
+         0, 0,
+         Start
+     );
 end;
 
 
