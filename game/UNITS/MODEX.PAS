@@ -29,6 +29,8 @@ procedure X_PutString(Page: Byte; X, Y: Word; S: String);
 
 procedure X_DrawRect(Page: Byte; X1, Y1, X2, Y2: Word; Color: Byte);
 
+procedure X_Draw(Page: Byte; X, Y: Word; Image: PImage);
+
 procedure X_DrawOpaque(Page: Byte; X, Y: Word; Image: PImage);
 
 procedure X_Draw16x16Opaque(Page: Byte; X, Y: Word; Image: PImage);
@@ -101,6 +103,14 @@ begin
          X_PutPixel(Page, X1, Y, Color);
          X_PutPixel(Page, X2, Y, Color);
      end;
+end;
+
+procedure X_Draw(Page: Byte; X, Y: Word; Image: PImage);
+begin
+     if Image^.TransparencyEncoded then
+         X_DrawAlpha(Page, X, Y, Image)
+     else
+         X_Draw16x16Opaque(Page, X, Y, Image);
 end;
 
 procedure X_DrawOpaque(Page: Byte; X, Y: Word; Image: PImage);

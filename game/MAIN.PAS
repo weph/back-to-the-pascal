@@ -25,14 +25,6 @@ var
    PlayerSprites: array[TDirection] of PImage;
    Frame: LongInt;
 
-procedure Draw(Page: Byte; X, Y: Integer; Image: PImage);
-begin
-     if Image^.TransparencyEncoded then
-         X_DrawAlpha(Page, X, Y, Image)
-     else
-         X_Draw16x16Opaque(Page, X, Y, Image);
-end;
-
 procedure LoadTiles(Filename: String);
 var
    Img: PCXImage;
@@ -116,7 +108,7 @@ begin
                  if Tile = 0 then continue;
 
                  with TilePositions[Row][Col] do begin
-                      Draw(Page, Start.X + X, Start.Y + Y, Tiles[Tile]);
+                      X_Draw(Page, Start.X + X, Start.Y + Y, Tiles[Tile]);
                  end;
              end;
          end;
@@ -371,7 +363,7 @@ begin
 
            SaveDirtyRect(NextPage, Player.X, Player.Y - Player.Z, Player.DirtyRect[NextPage]);
 
-           Draw(
+           X_Draw(
                 NextPage,
                 Player.X,
                 Player.Y - Player.Z,
