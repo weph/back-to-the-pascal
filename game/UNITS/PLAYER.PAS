@@ -13,9 +13,10 @@ type
         PushCycle: Byte;
         Map: PGameMap;
         LastTurn: LongInt;
+        Sprites: array[TDirection] of PImage;
         DirtyRect: array[0..1] of TDirtyRect;
 
-        constructor Init(TheMap: PGameMap);
+        constructor Init(TheMap: PGameMap; SpritesFilename: String);
         destructor Destroy;
         procedure Push;
         procedure Update(Frame: LongInt);
@@ -25,7 +26,7 @@ type
 
 implementation
 
-uses ModeX;
+uses ModeX, PCXImg;
 
 const
      PushCycleLength = 52;
@@ -63,9 +64,25 @@ begin
      HasCollision := false;
 end;
 
-constructor TPlayer.Init(TheMap: PGameMap);
+constructor TPlayer.Init(TheMap: PGameMap; SpritesFilename: String);
+var
+   Img: PCXImage;
 begin
      Map := TheMap;
+
+     Img.Init(SpritesFilename);
+
+     Sprites[S] := Img.ImageAt(0, 0, 32, 32);
+     Sprites[SW] := Img.ImageAt(32, 0, 32, 32);
+     Sprites[W] := Img.ImageAt(64, 0, 32, 32);
+     Sprites[NW] := Img.ImageAt(96, 0, 32, 32);
+     Sprites[N] := Img.ImageAt(128, 0, 32, 32);
+     Sprites[NE] := Img.ImageAt(160, 0, 32, 32);
+     Sprites[E] := Img.ImageAt(192, 0, 32, 32);
+     Sprites[SE] := Img.ImageAt(224, 0, 32, 32);
+
+     Img.Destroy;
+
      New(DirtyRect[0].Image, New(32, 32));
      New(DirtyRect[1].Image, New(32, 32));
 
@@ -81,6 +98,15 @@ end;
 
 destructor TPlayer.Destroy;
 begin
+     Dispose(Sprites[S], Destroy);
+     Dispose(Sprites[SW], Destroy);
+     Dispose(Sprites[W], Destroy);
+     Dispose(Sprites[NW], Destroy);
+     Dispose(Sprites[N], Destroy);
+     Dispose(Sprites[NE], Destroy);
+     Dispose(Sprites[E], Destroy);
+     Dispose(Sprites[SE], Destroy);
+
      Dispose(DirtyRect[0].Image, Destroy);
      Dispose(DirtyRect[1].Image, Destroy);
 end;

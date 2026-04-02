@@ -22,7 +22,6 @@ var
    Map: TGameMap;
    TilePositions: array[0..MapRows-1,0..MapCols-1] of TCoordinate;
    Tiles: array[1..255] of PImage;
-   PlayerSprites: array[TDirection] of PImage;
    Frame: LongInt;
 
 procedure LoadTiles(Filename: String);
@@ -56,36 +55,6 @@ begin
              Dispose(Tiles[Y * 20 + X + 1], Destroy);
          end;
      end;
-end;
-
-procedure LoadPlayer;
-var
-   Img: PCXImage;
-begin
-     Img.Init('assets\player.pcx');
-
-     PlayerSprites[S] := Img.ImageAt(0, 0, 32, 32);
-     PlayerSprites[SW] := Img.ImageAt(32, 0, 32, 32);
-     PlayerSprites[W] := Img.ImageAt(64, 0, 32, 32);
-     PlayerSprites[NW] := Img.ImageAt(96, 0, 32, 32);
-     PlayerSprites[N] := Img.ImageAt(128, 0, 32, 32);
-     PlayerSprites[NE] := Img.ImageAt(160, 0, 32, 32);
-     PlayerSprites[E] := Img.ImageAt(192, 0, 32, 32);
-     PlayerSprites[SE] := Img.ImageAt(224, 0, 32, 32);
-
-     Img.Destroy;
-end;
-
-procedure FreePlayer;
-begin
-     Dispose(PlayerSprites[S], Destroy);
-     Dispose(PlayerSprites[SW], Destroy);
-     Dispose(PlayerSprites[W], Destroy);
-     Dispose(PlayerSprites[NW], Destroy);
-     Dispose(PlayerSprites[N], Destroy);
-     Dispose(PlayerSprites[NE], Destroy);
-     Dispose(PlayerSprites[E], Destroy);
-     Dispose(PlayerSprites[SE], Destroy);
 end;
 
 procedure DrawPartialMap(
@@ -284,7 +253,7 @@ begin
      MaxScrollX := (Map.Width * TileWidth) - 320 - TileWidth;
      MaxScrollY := (Map.Height * TileHeight) - 240 - TileHeight;
 
-     Player.Init(@Map);
+     Player.Init(@Map, 'assets\player.pcx');
      Player.D := S;
      Player.X := 16;
      Player.Y := 16;
@@ -365,7 +334,7 @@ begin
                 NextPage,
                 Player.X,
                 Player.Y - Player.Z,
-                PlayerSprites[Player.D]
+                Player.Sprites[Player.D]
            );
 
            PTileX := (Player.X div TileWidth) - NextRedraw.X;
@@ -411,8 +380,6 @@ begin
      SetScreenWidth(LogicalScreenWidth);
      X_Fill(0);
 
-     LoadPlayer;
-
      LoadTiles('assets\race2.pcx');
      Map.Init('assets\race2.map');
      InitTilePositions;
@@ -423,7 +390,6 @@ begin
 
      Map.Destroy;
      FreeTiles;
-     FreePlayer;
 
      Profiler^.Print;
      M_Debug;
