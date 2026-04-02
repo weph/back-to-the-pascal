@@ -288,8 +288,6 @@ begin
      Player.D := S;
      Player.X := 16;
      Player.Y := 16;
-     Player.Z := 0;
-     Player.Speed := 0;
 
      UpdateMapScroll(Player, MapScroll);
 

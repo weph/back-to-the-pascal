@@ -68,6 +68,15 @@ begin
      Map := TheMap;
      New(DirtyRect[0].Image, New(32, 32));
      New(DirtyRect[1].Image, New(32, 32));
+
+     X := 0;
+     Y := 0;
+     Z := 0;
+     D := S;
+     Speed := 0;
+     OllieCycle := 0;
+     PushCycle := 0;
+     LastTurn := 0;
 end;
 
 destructor TPlayer.Destroy;
