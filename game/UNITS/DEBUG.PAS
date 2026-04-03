@@ -3,8 +3,10 @@ unit Debug;
 
 interface
 
+uses Sprite;
+
 type
-    FpsInfo = object
+    FpsInfo = object(TSprite)
         private
             SampleSize: Word;
             Frames: Word;
@@ -12,7 +14,8 @@ type
         public
             CurrentFps: Real;
             constructor Init(TheSampleSize: Word);
-            procedure Update;
+            procedure Update(Frame: LongInt); virtual;
+            procedure Draw(Page: Byte); virtual;
     end;
 
     PStopwatch = ^TStopwatch;
@@ -47,7 +50,7 @@ function Timestamp: LongInt;
 
 implementation
 
-uses Dos, Drivers, VGA, ZenTimer;
+uses Dos, Drivers, VGA, ZenTimer, ModeX;
 
 constructor TProfiler.Init;
 begin
@@ -132,6 +135,8 @@ end;
 
 constructor FpsInfo.Init;
 begin
+     inherited Init(0, 0, 65535, 48, 16);
+
      SampleSize := TheSampleSize;
      Frames := 0;
      LastTs := Timestamp;
@@ -152,6 +157,14 @@ begin
      CurrentFps := Frames / (NextTs - LastTs) * 100;
      LastTs := NextTs;
      Frames := 0;
+end;
+
+procedure FpsInfo.Draw(Page: Byte);
+var
+   S: String;
+begin
+     Str(CurrentFps:0:3, S);
+     X_PutString(Page, X, Y, S);
 end;
 
 begin

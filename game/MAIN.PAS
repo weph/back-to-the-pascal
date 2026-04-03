@@ -289,7 +289,7 @@ begin
      C := 0;
      Break := false;
      while Running do begin
-           FPS.Update;
+           FPS.Update(Frame);
 
            NextPage := (Page + 1) and 1;
 
@@ -301,8 +301,6 @@ begin
 
            DrawDirtyRect(NextPage, FpsBackground[NextPage]);
            SaveDirtyRect(NextPage, MapScroll.X + 16, MapScroll.Y + 16, FpsBackground[NextPage]);
-           Str(FPS.CurrentFps:0:3, FpsString);
-           X_PutString(NextPage, MapScroll.X + 16, MapScroll.Y + 16, FpsString);
 
            NextRedraw.X := MapScroll.X div TileWidth;
            NextRedraw.Y := MapScroll.Y div TileHeight;
@@ -330,12 +328,10 @@ begin
 
            SaveDirtyRect(NextPage, Player.X, Player.Y - Player.Z, Player.DirtyRect[NextPage]);
 
-           X_Draw(
-                NextPage,
-                Player.X,
-                Player.Y - Player.Z,
-                Player.Sprites[Player.D]
-           );
+           Player.Draw(NextPage);
+           FPS.X := MapScroll.X + 16;
+           FPS.Y := MapScroll.Y + 16;
+           FPS.Draw(NextPage);
 
            PTileX := (Player.X div TileWidth) - NextRedraw.X;
            PTileY := ((Player.Y - Player.Z) div TileHeight) - NextRedraw.Y;

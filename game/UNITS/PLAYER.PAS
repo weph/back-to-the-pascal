@@ -2,11 +2,11 @@ unit Player;
 
 interface
 
-uses Types, GameMap, Image;
+uses Types, GameMap, Image, Sprite;
 
 type
-    TPlayer = object
-        X, Y, Z: Integer;
+    PPlayer = ^TPlayer;
+    TPlayer = object(TSprite)
         D: TDirection;
         Speed: Byte;
         OllieCycle: Byte;
@@ -19,7 +19,8 @@ type
         constructor Init(TheMap: PGameMap; SpritesFilename: String);
         destructor Destroy;
         procedure Push;
-        procedure Update(Frame: LongInt);
+        procedure Update(Frame: LongInt); virtual;
+        procedure Draw(Page: Byte); virtual;
         procedure Turn(Frame: LongInt; Steps: ShortInt);
         procedure Ollie;
     end;
@@ -68,6 +69,8 @@ constructor TPlayer.Init(TheMap: PGameMap; SpritesFilename: String);
 var
    Img: PCXImage;
 begin
+     inherited Init(0, 0, 0, 32, 32);
+
      Map := TheMap;
 
      Img.Init(SpritesFilename);
@@ -86,9 +89,6 @@ begin
      New(DirtyRect[0].Image, New(32, 32));
      New(DirtyRect[1].Image, New(32, 32));
 
-     X := 0;
-     Y := 0;
-     Z := 0;
      D := S;
      Speed := 0;
      OllieCycle := 0;
@@ -197,6 +197,11 @@ begin
      if Y > (Map^.Height * TileHeight - 48) then
         Y := Map^.Height * TileHeight - 48;
 
+end;
+
+procedure TPlayer.Draw(Page: Byte);
+begin
+     X_Draw(Page, X, Y - Z, Sprites[D]);
 end;
 
 
