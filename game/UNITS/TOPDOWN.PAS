@@ -40,26 +40,6 @@ type
                 StartRow, EndRow: Word;
                 Start: TCoordinate
             );
-            procedure DrawLastColumn(
-                Page: Byte;
-                Offset: TCoordinate;
-                Start: TCoordinate
-            );
-            procedure DrawFirstColumn(
-                Page: Byte;
-                Offset: TCoordinate;
-                Start: TCoordinate
-            );
-            procedure DrawLastRow(
-                Page: Byte;
-                Offset: TCoordinate;
-                Start: TCoordinate
-            );
-            procedure DrawFirstRow(
-                Page: Byte;
-                Offset: TCoordinate;
-                Start: TCoordinate
-            );
     end;
 
 implementation
@@ -140,54 +120,6 @@ begin
      end;
 end;
 
-procedure TTopDownMapRenderer.DrawLastColumn(Page: Byte; Offset: TCoordinate; Start: TCoordinate);
-begin
-     DrawPartialMap(
-         Page,
-         Offset,
-         0, Map^.Depth - 1,
-         MapCols - 1, MapCols - 1,
-         0, MapRows - 1,
-         Start
-     );
-end;
-
-procedure TTopDownMapRenderer.DrawFirstColumn(Page: Byte; Offset: TCoordinate; Start: TCoordinate);
-begin
-     DrawPartialMap(
-         Page,
-         Offset,
-         0, Map^.Depth - 1,
-         0, 0,
-         0, MapRows - 1,
-         Start
-     );
-end;
-
-procedure TTopDownMapRenderer.DrawLastRow(Page: Byte; Offset: TCoordinate; Start: TCoordinate);
-begin
-     DrawPartialMap(
-         Page,
-         Offset,
-         0, Map^.Depth - 1,
-         0, MapCols - 1,
-         MapRows - 1, MapRows - 1,
-         Start
-     );
-end;
-
-procedure TTopDownMapRenderer.DrawFirstRow(Page: Byte; Offset: TCoordinate; Start: TCoordinate);
-begin
-     DrawPartialMap(
-         Page,
-         Offset,
-         0, Map^.Depth - 1,
-         0, MapCols - 1,
-         0, 0,
-         Start
-     );
-end;
-
 procedure TTopDownMapRenderer.Draw(
     Page: Byte;
     Offset: TCoordinate;
@@ -250,15 +182,43 @@ begin
      MapRedrawStart.Y := NextRedraw.Y * TileHeight;
 
      if NextRedraw.X > LastRedraw[Page].X then begin
-         DrawLastColumn(Page, NextRedraw, MapRedrawStart);
+         DrawPartialMap(
+             Page,
+             NextRedraw,
+             0, Map^.Depth - 1,
+             MapCols - 1, MapCols - 1,
+             0, MapRows - 1,
+             MapRedrawStart
+         );
      end else if NextRedraw.X < LastRedraw[Page].X then begin
-         DrawFirstColumn(Page, NextRedraw, MapRedrawStart);
+         DrawPartialMap(
+             Page,
+             NextRedraw,
+             0, Map^.Depth - 1,
+             0, 0,
+             0, MapRows - 1,
+             MapRedrawStart
+         );
      end;
 
      if NextRedraw.Y > LastRedraw[Page].Y then begin
-         DrawLastRow(Page, NextRedraw, MapRedrawStart);
+         DrawPartialMap(
+             Page,
+             NextRedraw,
+             0, Map^.Depth - 1,
+             0, MapCols - 1,
+             MapRows - 1, MapRows - 1,
+             MapRedrawStart
+         );
      end else if NextRedraw.Y < LastRedraw[Page].Y then begin
-         DrawFirstRow(Page, NextRedraw, MapRedrawStart);
+         DrawPartialMap(
+             Page,
+             NextRedraw,
+             0, Map^.Depth - 1,
+             0, MapCols - 1,
+             0, 0,
+             MapRedrawStart
+         );
      end;
 
      LastRedraw[Page] := NextRedraw;
