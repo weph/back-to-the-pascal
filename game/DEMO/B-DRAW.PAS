@@ -1,5 +1,5 @@
 program DrawBenchmark;
-uses VGA, ModeX, Zentimer, PCXImg, Image, Debug, Drivers;
+uses Globals, VGA, ModeX, Zentimer, PCXImg, Image, Debug, Drivers;
 
 type
     TDrawFunc = procedure(Page: Byte; X, Y: Word; Image: PImage);

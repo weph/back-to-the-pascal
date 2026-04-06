@@ -1,5 +1,5 @@
 program VMemCpy;
-uses VGA, ModeX, Image, Debug;
+uses Globals, VGA, ModeX, Image, Debug;
 
 procedure ProfileCopy(Title: String; Image: PImage);
 var

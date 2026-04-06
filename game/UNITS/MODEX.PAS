@@ -3,21 +3,7 @@ unit ModeX;
 
 interface
 
-uses Image;
-
-const
-     TileWidth = 16;
-     TileHeight = 16;
-
-     LogicalScreenWidth = 320 + 2 * TileWidth;
-     LogicalScreenHeight = 240 + 2 * TileHeight;
-
-     PlaneWidth = LogicalScreenWidth div 4;
-     PageSize = PlaneWidth * LogicalScreenHeight;
-     PageOffset: array[0..1] of Word = (0, PageSize);
-
-     ScreenOffset = (TileHeight * PlaneWidth) + (TileWidth div 4);
-
+uses Globals, Image;
 
 procedure X_Fill(Color: Byte);
 

@@ -27,7 +27,7 @@ type
 
 implementation
 
-uses ModeX, PCXImg;
+uses Globals, ModeX, PCXImg;
 
 const
      PushCycleLength = 52;
