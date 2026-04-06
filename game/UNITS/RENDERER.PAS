@@ -2,9 +2,9 @@ unit Renderer;
 
 interface
 
-uses Types, Sprite, TopDown;
+uses Types, Sprite, MapRendr;
 
-procedure R_Init(_MapRenderer: PTopDownMapRenderer);
+procedure R_Init(_MapRenderer: PMapRenderer);
 
 procedure R_AddSprite(Sprite: PSprite);
 
@@ -22,7 +22,7 @@ var
    Sprites: array[0..255] of PSprite;
    NumSprites: Byte;
    DirtyRects: array[0..1,0..255] of TDirtyRect;
-   MapRenderer: PTopDownMapRenderer;
+   MapRenderer: PMapRenderer;
 
 procedure SaveDirtyRect(Page: Byte; X, Y: Word; var Target: TDirtyRect);
 begin
@@ -73,7 +73,7 @@ begin
      end;
 end;
 
-procedure R_Init(_MapRenderer: PTopDownMapRenderer);
+procedure R_Init(_MapRenderer: PMapRenderer);
 begin
      MapRenderer := _MapRenderer;
 end;
