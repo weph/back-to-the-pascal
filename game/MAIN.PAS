@@ -14,7 +14,8 @@ uses
     Keyboard,
     Malloc,
     Globals,
-    Renderer;
+    Renderer,
+    TopDown;
 
 var
    Frame: LongInt;
@@ -108,18 +109,23 @@ begin
      Player.Destroy;
 end;
 
+var
+   MapRenderer: TTopDownMapRenderer;
+
 begin
      InitModeX;
      SetScreenWidth(LogicalScreenWidth);
      X_Fill(0);
 
-     R_Init('assets\race2.pcx');
      Map.Init('assets\race2.map');
+     MapRenderer.Init(@Map, 'assets\race2.pcx');
+     R_Init(@MapRenderer);
 
      MainLoop;
 
      SetVideoMode(3);
 
+     MapRenderer.Destroy;
      Map.Destroy;
      R_Destroy;
 
