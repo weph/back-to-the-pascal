@@ -161,36 +161,67 @@ begin
         jz @SkipPixels
 
      @Draw:
+        push bx
+
         mov cl, al
         sub dx, cx
         dec si
 
-     @NextPixel:
-        push bx
+        mov bx, 0 { continuous pixel counter }
 
-        mov bl, es:[di]
-        cmp bl, Z
+     @NextPixel:
+        mov al, es:[di+bx]
+        cmp al, Z
         ja @SkipPixel
 
-        mov bl, Z
-        mov es:[di], bl
+        mov al, Z
+        mov es:[di+bx], al
 
-        push es
-        mov ax, $a000
-        mov es, ax
-        movsb
-        pop es
+        inc bx
+
         jmp @Check
 
      @SkipPixel:
+        cmp bx, 0
+        je @MoveOn
+
+        push cx
+        push es
+        mov ax, $a000
+        mov es, ax
+        mov cx, bx
+        {shr cx, 2
+        db 66h
+        rep movsw
+        mov cl, bl
+        and cl, 3}
+        rep movsb
+        pop es
+        pop cx
+
+     @MoveOn:
         inc si
         inc di
 
      @Check:
-        pop bx
         dec cl
         jnz @NextPixel
 
+        push cx
+        push es
+        mov ax, $a000
+        mov es, ax
+        mov cx, bx
+        {shr cx, 2
+        db 66h
+        rep movsw
+        mov cl, bl
+        and cl, 3}
+        rep movsb
+        pop es
+        pop cx
+
+        pop bx
         jmp @MainLoop
 
      @SkipPixels:
@@ -401,17 +432,6 @@ begin
      Img.Destroy;
 
      New(DirtyRect, New(32, 32));
-
-     DrawRect(80, 80, 160, 160, 200, 7);  { gray }
-     DrawRect(120, 40, 180, 180, 100, 1); { dark blue }
-     DrawRect(100, 60, 170, 170, 120, 2); { green }
-     DrawRect(40, 100, 240, 120, 150, 3); { cyan }
-
-     ReadLn;
-
-     FreeZBuffer;
-     InitZBuffer;
-     X_Fill(0);
 
      SW := Profiler^.Stopwatch('Fill Screen');
      SW^.Start;
