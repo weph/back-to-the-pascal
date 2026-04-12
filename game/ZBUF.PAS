@@ -80,7 +80,6 @@ begin
      Height := Image^.Height;
      Width := Image^.Width shr 2;
 
-
      PlaneShift := X mod 4;
      for i := 0 to 3 do begin
          PlaneData[i] := (1 shl ((i + PlaneShift) mod 4) shl 8) or (Ord(i + PlaneShift > 3));
@@ -91,18 +90,15 @@ begin
 
      {
         ds:si image data
-        es:di screen
+        es:di screen / z-buffer
         bh    plane counter
-        bl    row
-        dx    ScIndex
+        bl    line counter
+        dx    line width
      }
      asm
         push ds
 
         lds si, ImageData
-
-        {mov ax, $a000
-        mov es, ax}
 
         mov bh, 4              { number of planes }
 
@@ -179,7 +175,8 @@ begin
 
         inc bx
 
-        jmp @Check
+        dec cl
+        jnz @NextPixel
 
      @SkipPixel:
         cmp bx, 0
@@ -190,37 +187,16 @@ begin
         mov ax, $a000
         mov es, ax
         mov cx, bx
-        {shr cx, 2
-        db 66h
-        rep movsw
-        mov cl, bl
-        and cl, 3}
         rep movsb
         pop es
         pop cx
+        jmp @Yo
 
      @MoveOn:
         inc si
         inc di
 
-     @Check:
-        dec cl
-        jnz @NextPixel
-
-        push cx
-        push es
-        mov ax, $a000
-        mov es, ax
-        mov cx, bx
-        {shr cx, 2
-        db 66h
-        rep movsw
-        mov cl, bl
-        and cl, 3}
-        rep movsb
-        pop es
-        pop cx
-
+     @Yo:
         pop bx
         jmp @MainLoop
 
