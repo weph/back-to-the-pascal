@@ -201,7 +201,7 @@ end;
 
 procedure TPlayer.Draw(Page: Byte);
 begin
-     X_Draw(Page, X, Y - Z, Sprites[D]);
+     X_Draw(Page, X, Y - Z, (Y + 32) div 8, Sprites[D]);
 end;
 
 

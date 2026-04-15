@@ -80,10 +80,11 @@ begin
 
      Page := 0;
      Break := false;
+     EnableKeyboardHandler;
      while Running do begin
            FPS.Update(Frame);
            Player.Update(Frame);
-           UpdateMapScroll(Player, MapScroll);
+           {UpdateMapScroll(Player, MapScroll);}
 
            FPS.X := MapScroll.X + 32;
            FPS.Y := MapScroll.Y + 16;
@@ -105,6 +106,7 @@ begin
 
            Inc(Frame);
      end;
+     DisableKeyboardHandler;
 
      Player.Destroy;
 end;
@@ -115,6 +117,7 @@ var
 begin
      InitModeX;
      SetScreenWidth(LogicalScreenWidth);
+     X_InitZBuf;
      X_Fill(0);
 
      Map.Init('assets\iso2.map');
@@ -123,11 +126,18 @@ begin
 
      MainLoop;
 
+     SetVideoStartAddress(PageOffset[0] + ScreenOffset, 0);
+
+     X_Fill(0);
+     X_DrawZBuf(0);
+     ReadLn;
+
      SetVideoMode(3);
 
      MapRenderer.Destroy;
      Map.Destroy;
      R_Destroy;
+     X_DestroyZBuf;
 
      Profiler^.Print;
      M_Debug;

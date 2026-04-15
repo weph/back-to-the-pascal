@@ -104,12 +104,13 @@ var
    Col, Row, TCol, TRow, Layer: Word;
    SX, SY: LongInt;
    TileTop, TileLeft, TileRight, TileBottom: Byte;
+   Z: Byte;
 begin
      {StartLayer := 1;}
      {EndLayer := 0;}
-     for Layer := StartLayer to EndLayer do begin
-         for Col := StartCol to EndCol do begin
-             for Row := StartRow to EndRow do begin
+     for Layer := EndLayer downto StartLayer do begin
+         for Row := EndRow downto StartRow do begin
+             for Col := EndCol downto StartCol do begin
                  with TilePositions[Layer,Row,Col] do begin
                      TCol := Offset.X + Col + 1;
                      TRow := (Offset.Y + Row) shl 1;
@@ -121,39 +122,46 @@ begin
                      SX := Start.X + X;
                      SY := Start.Y + Y;
 
-                     if TileTop <> 0 then begin
-                        X_Draw(
-                            Page,
-                            SX,
-                            SY,
-                            Tiles[TileTop].Bottom
-                        );
-                     end;
+                     Z := Row * 2;
+                     if Layer > 0 then Inc(Z, Layer + 1);
 
-                     if TileLeft <> 0 then begin
-                        X_Draw(
+                     if TileBottom <> 0 then begin
+                        X_DrawAlphaZ(
                             Page,
                             SX,
-                            SY,
-                            Tiles[TileLeft].Right
+                            SY + 8,
+                            Z + 2,
+                            Tiles[TileBottom].Top
                         );
                      end;
 
                      if TileRight <> 0 then begin
-                        X_Draw(
+                        X_DrawAlphaZ(
                             Page,
                             SX + 16,
                             SY,
+                            Z + 1,
                             Tiles[TileRight].Left
                         );
                      end;
 
-                     if TileBottom <> 0 then begin
-                        X_Draw(
+                     if TileLeft <> 0 then begin
+                        X_DrawAlphaZ(
                             Page,
                             SX,
-                            SY + 8,
-                            Tiles[TileBottom].Top
+                            SY,
+                            Z + 1,
+                            Tiles[TileLeft].Right
+                        );
+                     end;
+
+                     if TileTop <> 0 then begin
+                        X_DrawAlphaZ(
+                            Page,
+                            SX,
+                            SY,
+                            Z,
+                            Tiles[TileTop].Bottom
                         );
                      end;
                  end;

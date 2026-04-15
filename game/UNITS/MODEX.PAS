@@ -5,6 +5,14 @@ interface
 
 uses Globals, Image;
 
+procedure X_InitZBuf;
+
+procedure X_DestroyZBuf;
+
+procedure X_DrawZBuf(Page: Byte);
+
+procedure X_DumpZBuf(Page: Byte; X, Y, Width, Height: Word);
+
 procedure X_Fill(Color: Byte);
 
 procedure X_PutPixel(Page: Byte; X, Y: Word; Color: Byte);
@@ -15,20 +23,80 @@ procedure X_PutString(Page: Byte; X, Y: Word; S: String);
 
 procedure X_DrawRect(Page: Byte; X1, Y1, X2, Y2: Word; Color: Byte);
 
-procedure X_Draw(Page: Byte; X, Y: Word; Image: PImage);
+procedure X_Draw(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
 
 procedure X_DrawOpaque(Page: Byte; X, Y: Word; Image: PImage);
 
 procedure X_Draw16x16Opaque(Page: Byte; X, Y: Word; Image: PImage);
 
-procedure X_DrawAlpha(Page: Byte; X, Y: Word; Image: PImage);
+procedure X_DrawAlpha(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
+
+procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
 
 procedure X_CopyToSysMem(Page: Byte; X, Y: Word; Width, Height: Byte; Target: Pointer);
 
 
 implementation
 
-uses VGA;
+uses VGA, Malloc;
+
+var
+   ZBuffer: array[0..1,0..3] of Pointer;
+
+procedure X_InitZBuf;
+var
+   Page, Plane: Byte;
+begin
+     for Page := 0 to 1 do begin
+         for Plane := 0 to 3 do begin
+             M_Alloc(ZBuffer[Page][Plane], PlaneWidth * LogicalScreenHeight);
+             FillChar(ZBuffer[Page][Plane]^, PlaneWidth * LogicalScreenHeight, 0);
+         end;
+     end;
+end;
+
+procedure X_DestroyZBuf;
+var
+   Page, Plane: Byte;
+begin
+     for Page := 0 to 1 do begin
+         for Plane := 0 to 3 do begin
+             M_Free(ZBuffer[Page][Plane], PlaneWidth * LogicalScreenHeight);
+         end;
+     end;
+end;
+
+procedure X_DrawZBuf(Page: Byte);
+var
+   Y, X: Word;
+   C: TColor;
+begin
+     for X := 0 to 255 do begin
+         C.Red := X;
+         C.Green := X;
+         C.Blue := X;
+
+         SetColor(X, C);
+     end;
+
+     for Y := 0 to LogicalScreenHeight do begin
+         for X := 0 to LogicalScreenWidth do begin
+             X_PutPixel(Page, X, Y, Ord(PChar(ZBuffer[Page][X and 3])[Y * PlaneWidth + X shr 2]) shl 2);
+         end;
+     end;
+end;
+
+procedure X_DumpZBuf(Page: Byte; X, Y, Width, Height: Word);
+var
+   XP, YP: Word;
+begin
+     for YP := Y to Y + Height do begin
+         for XP := X to X + Width do begin
+             Write(Ord(PChar(ZBuffer[Page][XP and 3])[YP * PlaneWidth + XP shr 2]), ' ');
+         end;
+         WriteLn('');
+     end;
+end;
 
 procedure X_Fill(Color: Byte);
 begin
@@ -91,10 +159,10 @@ begin
      end;
 end;
 
-procedure X_Draw(Page: Byte; X, Y: Word; Image: PImage);
+procedure X_Draw(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
 begin
      if Image^.TransparencyEncoded then
-         X_DrawAlpha(Page, X, Y, Image)
+         X_DrawAlpha(Page, X, Y, Z, Image)
      else
          X_Draw16x16Opaque(Page, X, Y, Image);
 end;
@@ -473,7 +541,7 @@ begin
      end;
 end;
 
-procedure X_DrawAlpha(Page: Byte; X, Y: Word; Image: PImage);
+procedure X_DrawAlpha(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
 var
    ImageData: Pointer;
    Plane: Byte;
@@ -486,15 +554,17 @@ var
    PPlaneData: Pointer;
    i: Byte;
    PlaneShift: Byte;
+   PZBuffer: Pointer;
+   CurPageOffset: Word;
 begin
      ImageData := Image^.Data;
      EndOffset := Ofs(Image^.Data^) + Image^.MemSize;
      LineOffset := PlaneWidth - (Image^.Width div 4);
      Plane := 0;
-     StartYOffset := PageOffset[Page] + Y * PlaneWidth + (X div 4);
+     CurPageOffset := PageOffset[Page];
+     StartYOffset := Y * PlaneWidth + (X div 4);
      Height := Image^.Height;
      Width := Image^.Width shr 2;
-
 
      PlaneShift := X mod 4;
      for i := 0 to 3 do begin
@@ -502,6 +572,7 @@ begin
      end;
 
      PPlaneData := @PlaneData;
+     PZBuffer := @ZBuffer;
 
      {
         ds:si image data
@@ -515,8 +586,8 @@ begin
 
         lds si, ImageData
 
-        mov ax, $a000
-        mov es, ax
+        {mov ax, $a000
+        mov es, ax}
 
         mov bh, 4              { number of planes }
 
@@ -535,19 +606,32 @@ begin
 
         mov al, ds:[si+bx]
         mov ah, 0
-
         mov di, StartYOffset
         add di, ax
 
+        { z-buffer for current plane => es }
+        push di
+        push bx
+        les di, PZBuffer
+        mov bh, 0
+        mov bl, Plane
+        add bl, PlaneShift
+        {add bx, ax}
+        and bx, 3
+        shl bx, 2
+        mov ax, es:[di+bx+2]
+        mov es, ax
+        pop bx
+        pop di
+
         mov al, 2                { select plane operation }
         mov ah, ds:[si+bx+1]     { actual plane }
+        mov dx, ScIndex
+        out dx, ax
 
         pop bx
         pop si
         pop ds
-
-        mov dx, ScIndex
-        out dx, ax
 
         mov bl, Height
 
@@ -567,13 +651,380 @@ begin
         sub dx, cx
         dec si
 
-        shr cx, 2
-        db 66h
-        rep movsw
-        mov cl, al
-        and cl, 3
-        rep movsb
+     @NextPixel:
+        push bx
+        push dx
 
+        mov dx, CurPageOffset
+
+        mov bl, es:[di]
+        cmp bl, Z
+        ja @SkipPixel
+
+        {mov bh, 0
+        mov bl, Z
+        mov es:[di], bx}
+
+        push es
+        add di, dx
+        mov ax, $a000
+        mov es, ax
+        movsb
+        sub di, dx
+        pop es
+        jmp @Check
+
+     @SkipPixel:
+        inc si
+        inc di
+
+     @Check:
+        pop dx
+        pop bx
+        dec cl
+        jnz @NextPixel
+
+        jmp @MainLoop
+
+     @SkipPixels:
+        mov al, ah
+        xor ah, ah
+        add di, ax
+        sub dx, ax
+        jmp @MainLoop
+
+     @NextLine:
+        add di, LineOffset
+        add di, dx
+
+        dec bl
+        jnz @StartOver
+
+        inc &Plane
+        dec bh
+        jnz @DrawPlane
+
+        pop ds
+     end;
+end;
+
+procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
+var
+   ImageData: Pointer;
+   Plane: Byte;
+   StartYOffset: Word;
+   LineOffset: Word;
+   EndOffset: Word;
+   Height: Byte;
+   Width: Byte;
+   PlaneData: array[0..3] of Word;
+   PPlaneData: Pointer;
+   i: Byte;
+   PlaneShift: Byte;
+   PZBuffer: Pointer;
+   CurPageOffset: Word;
+   CurZ: Byte;
+begin
+     ImageData := Image^.Data;
+     EndOffset := Ofs(Image^.Data^) + Image^.MemSize;
+     LineOffset := PlaneWidth - (Image^.Width div 4);
+     Plane := 0;
+     CurPageOffset := PageOffset[Page];
+     StartYOffset := Y * PlaneWidth + (X div 4);
+     Height := Image^.Height;
+     Width := Image^.Width shr 2;
+
+
+     PlaneShift := X mod 4;
+     for i := 0 to 3 do begin
+         PlaneData[i] := (1 shl ((i + PlaneShift) mod 4) shl 8) or (Ord(i + PlaneShift > 3));
+     end;
+
+     PPlaneData := @PlaneData;
+     PZBuffer := @ZBuffer;
+
+     {
+        ds:si image data
+        es:di screen
+        bh    plane counter
+        bl    row
+        dx    ScIndex
+     }
+     asm
+        push ds
+
+        lds si, ImageData
+
+        {mov ax, $a000
+        mov es, ax}
+
+        mov bh, 4              { number of planes }
+
+        mov ch, 0
+
+     @DrawPlane:
+        push ds
+        push si
+        push bx
+
+        lds si, PPlaneData
+
+        mov bl, Plane
+        mov bh, 0
+        shl bx, 1
+
+        mov al, ds:[si+bx]
+        mov ah, 0
+        mov di, StartYOffset
+        add di, ax
+
+        { z-buffer for current plane => es }
+        push di
+        push bx
+        les di, PZBuffer
+        mov bh, 0
+        mov bl, Plane
+        add bl, PlaneShift
+        {add bx, ax}
+        and bx, 3
+        shl bx, 2
+        mov ax, es:[di+bx+2]
+        mov es, ax
+        pop bx
+        pop di
+
+        mov al, 2                { select plane operation }
+        mov ah, ds:[si+bx+1]     { actual plane }
+        mov dx, ScIndex
+        out dx, ax
+
+        pop bx
+        pop si
+        pop ds
+
+        mov bl, Height
+        mov dh, Z
+
+     @StartOver:
+        mov dl, Width
+
+     @MainLoop:
+        lodsw
+        or ax, ax
+        jz @NextLine
+
+        or al, al
+        jz @SkipPixels
+
+     @Draw:
+        mov cl, al
+        sub dl, cl
+        dec si
+
+     @NextPixel:
+        push bx
+
+        mov bl, es:[di]
+        cmp bl, dh
+        ja @SkipPixel
+
+        mov es:[di], dh
+
+        push es
+        add di, CurPageOffset
+        mov ax, $a000
+        mov es, ax
+        movsb
+        sub di, CurPageOffset
+        pop es
+        jmp @Check
+
+     @SkipPixel:
+        inc si
+        inc di
+
+     @Check:
+        pop bx
+        dec cl
+        jnz @NextPixel
+
+        jmp @MainLoop
+
+     @SkipPixels:
+        mov al, ah
+        xor ah, ah
+        add di, ax
+        sub dl, al
+        jmp @MainLoop
+
+     @NextLine:
+        add di, LineOffset
+        mov al, dl
+        mov ah, 0
+        add di, ax
+        {inc dl}
+
+        dec bl
+        jnz @StartOver
+
+        inc &Plane
+        dec bh
+        jnz @DrawPlane
+
+        pop ds
+     end;
+end;
+
+
+
+procedure X_DrawAlphaZ_BUGGY(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
+var
+   ImageData: Pointer;
+   Plane: Byte;
+   StartYOffset: Word;
+   LineOffset: Word;
+   EndOffset: Word;
+   Height: Byte;
+   Width: Word;
+   PlaneData: array[0..3] of Word;
+   PPlaneData: Pointer;
+   i: Byte;
+   PlaneShift: Byte;
+   PZBuffer: Pointer;
+   CurPageOffset: Word;
+begin
+     ImageData := Image^.Data;
+     EndOffset := Ofs(Image^.Data^) + Image^.MemSize;
+     LineOffset := PlaneWidth - (Image^.Width div 4);
+     Plane := 0;
+     CurPageOffset := PageOffset[Page];
+     StartYOffset := Y * PlaneWidth + (X div 4);
+     Height := Image^.Height;
+     Width := Image^.Width shr 2;
+
+     PlaneShift := X mod 4;
+     for i := 0 to 3 do begin
+         PlaneData[i] := (1 shl ((i + PlaneShift) mod 4) shl 8) or (Ord(i + PlaneShift > 3));
+     end;
+
+     PPlaneData := @PlaneData;
+     PZBuffer := @ZBuffer[Page];
+
+     {
+        ds:si image data
+        es:di screen / z-buffer
+        bh    plane counter
+        bl    line counter
+        dx    line width
+     }
+     asm
+        push ds
+
+        lds si, ImageData
+
+        mov bh, 4              { number of planes }
+
+        mov ch, 0
+
+     @DrawPlane:
+        push ds
+        push si
+        push bx
+
+        lds si, PPlaneData
+
+        mov bl, Plane
+        mov bh, 0
+        shl bx, 1
+
+        mov al, ds:[si+bx]
+        mov ah, 0
+        mov di, StartYOffset
+        add di, ax
+
+        { z-buffer for current plane => es }
+        push di
+        push bx
+        les di, PZBuffer
+        mov bh, 0
+        mov bl, Plane
+        add bl, PlaneShift
+        and bx, 3
+        shl bx, 2
+        mov ax, es:[di+bx+2]
+        mov es, ax
+        pop bx
+        pop di
+
+        mov al, 2                { select plane operation }
+        mov ah, ds:[si+bx+1]     { actual plane }
+        mov dx, ScIndex
+        out dx, ax
+
+        pop bx
+        pop si
+        pop ds
+
+        mov bl, Height
+
+     @StartOver:
+        mov dx, Width
+
+     @MainLoop:
+        lodsw
+        or ax, ax
+        jz @NextLine
+
+        or al, al
+        jz @SkipPixels
+
+     @Draw:
+        mov cl, al
+        sub dx, cx
+        dec si
+
+        push bx
+        push dx
+
+        mov bx, 0 { continuous pixel counter }
+        mov dx, CurPageOffset
+
+     @NextPixel:
+        mov al, es:[di+bx]
+        cmp al, Z
+        ja @SkipPixel
+
+        mov al, Z
+        mov es:[di+bx], al
+
+        inc bx
+
+        dec cl
+        jnz @NextPixel
+
+     @SkipPixel:
+        cmp bx, 0
+        je @MoveOn
+
+        push cx
+        push es
+        add di, dx
+        mov ax, $a000
+        mov es, ax
+        mov cx, bx
+        rep movsb
+        sub di, dx
+        pop es
+        pop cx
+        jmp @Yo
+
+     @MoveOn:
+        inc si
+        inc di
+
+     @Yo:
+        pop dx
+        pop bx
         jmp @MainLoop
 
      @SkipPixels:

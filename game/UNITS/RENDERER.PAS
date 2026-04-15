@@ -121,7 +121,6 @@ begin
 
      for Sprite := 0 to NumSprites - 1 do begin
          Sprites[Sprite]^.Draw(Page);
-         MapRenderer^.DrawLayersCoveringSprite(Page, Scroll, Sprites[Sprite]);
      end;
 end;
 
