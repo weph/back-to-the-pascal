@@ -92,6 +92,7 @@ begin
          0, MapRows - 1,
          Start
      );
+     LastRedraw[Page] := Start;
 end;
 
 procedure TMapRenderer.DrawLayersCoveringSprite(
@@ -141,6 +142,8 @@ begin
      MapRedrawStart.Y := NextRedraw.Y * TileHeight;
 
      if NextRedraw.X > LastRedraw[Page].X then begin
+         X_ClearZBufLastCol(Page);
+
          DrawPartialMap(
              Page,
              NextRedraw,
@@ -150,6 +153,7 @@ begin
              MapRedrawStart
          );
      end else if NextRedraw.X < LastRedraw[Page].X then begin
+         X_ClearZBufFirstCol(Page);
          DrawPartialMap(
              Page,
              NextRedraw,

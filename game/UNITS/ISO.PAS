@@ -119,8 +119,8 @@ begin
                      TileRight := Map^.TileAt(TCol, TRow + 1, Layer);
                      TileBottom := Map^.TileAt(TCol, TRow + 2, Layer);
 
-                     SX := Start.X + X;
-                     SY := Start.Y + Y;
+                     SX := X;
+                     SY := Y;
 
                      Z := Row * 2;
                      if Layer > 0 then Inc(Z, Layer + 1);
@@ -131,7 +131,8 @@ begin
                             SX,
                             SY + 8,
                             Z + 2,
-                            Tiles[TileBottom].Top
+                            Tiles[TileBottom].Top,
+                            Start
                         );
                      end;
 
@@ -141,7 +142,8 @@ begin
                             SX + 16,
                             SY,
                             Z + 1,
-                            Tiles[TileRight].Left
+                            Tiles[TileRight].Left,
+                            Start
                         );
                      end;
 
@@ -151,7 +153,8 @@ begin
                             SX,
                             SY,
                             Z + 1,
-                            Tiles[TileLeft].Right
+                            Tiles[TileLeft].Right,
+                            Start
                         );
                      end;
 
@@ -161,7 +164,8 @@ begin
                             SX,
                             SY,
                             Z,
-                            Tiles[TileTop].Bottom
+                            Tiles[TileTop].Bottom,
+                            Start
                         );
                      end;
                  end;

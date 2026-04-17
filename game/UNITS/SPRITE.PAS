@@ -12,7 +12,7 @@ type
 
         constructor Init(_X, _Y, _Z: Word; _Width, _Height: Byte);
         procedure Update(Frame: LongInt); virtual;
-        procedure Draw(Page: Byte); virtual;
+        procedure Draw(Page: Byte; ScreenOffset: TCoordinate); virtual;
     end;
 
 implementation
@@ -32,7 +32,7 @@ begin
      Halt(1);
 end;
 
-procedure TSprite.Draw(Page: Byte);
+procedure TSprite.Draw(Page: Byte; ScreenOffset: TCoordinate);
 begin
      Halt(1);
 end;

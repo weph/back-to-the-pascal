@@ -20,7 +20,7 @@ type
         destructor Destroy;
         procedure Push;
         procedure Update(Frame: LongInt); virtual;
-        procedure Draw(Page: Byte); virtual;
+        procedure Draw(Page: Byte; ScreenOffset: TCoordinate); virtual;
         procedure Turn(Frame: LongInt; Steps: ShortInt);
         procedure Ollie;
     end;
@@ -199,9 +199,9 @@ begin
 
 end;
 
-procedure TPlayer.Draw(Page: Byte);
+procedure TPlayer.Draw(Page: Byte; ScreenOffset: TCoordinate);
 begin
-     X_Draw(Page, X, Y - Z, (Y + 32) div 8, Sprites[D]);
+     X_DrawAlpha(Page, X, Y - Z, (Y + 32) div 8, Sprites[D], ScreenOffset);
 end;
 
 

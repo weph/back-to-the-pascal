@@ -63,7 +63,7 @@ begin
      MaxScrollY := (Map.Height * TileHeight) - 240 - TileHeight;
 
      Player.Init(@Map, 'assets\player.pcx');
-     Player.D := S;
+     Player.D := E;
      Player.X := 64;
      Player.Y := 64;
 
@@ -84,7 +84,7 @@ begin
      while Running do begin
            FPS.Update(Frame);
            Player.Update(Frame);
-           {UpdateMapScroll(Player, MapScroll);}
+           UpdateMapScroll(Player, MapScroll);
 
            FPS.X := MapScroll.X + 32;
            FPS.Y := MapScroll.Y + 16;
@@ -129,6 +129,7 @@ begin
      SetVideoStartAddress(PageOffset[0] + ScreenOffset, 0);
 
      X_Fill(0);
+     {X_ClearZBufFirstCol(0);}
      X_DrawZBuf(0);
      ReadLn;
 

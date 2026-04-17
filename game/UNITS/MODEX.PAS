@@ -3,13 +3,17 @@ unit ModeX;
 
 interface
 
-uses Globals, Image;
+uses Globals, Image, Types;
 
 procedure X_InitZBuf;
 
 procedure X_DestroyZBuf;
 
 procedure X_DrawZBuf(Page: Byte);
+
+procedure X_ClearZBufFirstCol(Page: Byte);
+
+procedure X_ClearZBufLastCol(Page: Byte);
 
 procedure X_DumpZBuf(Page: Byte; X, Y, Width, Height: Word);
 
@@ -29,9 +33,9 @@ procedure X_DrawOpaque(Page: Byte; X, Y: Word; Image: PImage);
 
 procedure X_Draw16x16Opaque(Page: Byte; X, Y: Word; Image: PImage);
 
-procedure X_DrawAlpha(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
+procedure X_DrawAlpha(Page: Byte; X, Y: Word; Z: Byte; Image: PImage; ScreenOffset: TCoordinate);
 
-procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
+procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage; ScreenOffset: TCoordinate);
 
 procedure X_CopyToSysMem(Page: Byte; X, Y: Word; Width, Height: Byte; Target: Pointer);
 
@@ -62,6 +66,51 @@ begin
      for Page := 0 to 1 do begin
          for Plane := 0 to 3 do begin
              M_Free(ZBuffer[Page][Plane], PlaneWidth * LogicalScreenHeight);
+         end;
+     end;
+end;
+
+procedure X_ClearZBufFirstCol(Page: Byte);
+var
+   Plane: Byte;
+   Y: Word;
+   PSeg, POfs: Word;
+begin
+     for Plane := 0 to 3 do begin
+         PSeg := Seg(ZBuffer[Page][Plane]^);
+         POfs := Ofs(ZBuffer[Page][Plane]^);
+
+         for Y := 0 to LogicalScreenHeight do begin
+             Move(
+                  Ptr(PSeg, POfs + Y * PlaneWidth)^,
+                  Ptr(PSeg, POfs + Y * PlaneWidth + 8)^,
+                  PlaneWidth - 8
+             );
+
+             FillChar(Ptr(PSeg, POfs + Y * PlaneWidth)^, 8, 0);
+         end;
+     end;
+end;
+
+
+procedure X_ClearZBufLastCol(Page: Byte);
+var
+   Plane: Byte;
+   Y: Word;
+   PSeg, POfs: Word;
+begin
+     for Plane := 0 to 3 do begin
+         PSeg := Seg(ZBuffer[Page][Plane]^);
+         POfs := Ofs(ZBuffer[Page][Plane]^);
+
+         for Y := 0 to LogicalScreenHeight do begin
+             Move(
+                  Ptr(PSeg, POfs + Y * PlaneWidth + 8)^,
+                  Ptr(PSeg, POfs + Y * PlaneWidth)^,
+                  PlaneWidth - 8
+             );
+
+             FillChar(Ptr(PSeg, POfs + Y * PlaneWidth + PlaneWidth - 8)^, 8, 0);
          end;
      end;
 end;
@@ -162,7 +211,7 @@ end;
 procedure X_Draw(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
 begin
      if Image^.TransparencyEncoded then
-         X_DrawAlpha(Page, X, Y, Z, Image)
+         {X_DrawAlpha(Page, X, Y, Z, Image)}
      else
          X_Draw16x16Opaque(Page, X, Y, Image);
 end;
@@ -541,7 +590,7 @@ begin
      end;
 end;
 
-procedure X_DrawAlpha(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
+procedure X_DrawAlpha(Page: Byte; X, Y: Word; Z: Byte; Image: PImage; ScreenOffset: TCoordinate);
 var
    ImageData: Pointer;
    Plane: Byte;
@@ -561,7 +610,7 @@ begin
      EndOffset := Ofs(Image^.Data^) + Image^.MemSize;
      LineOffset := PlaneWidth - (Image^.Width div 4);
      Plane := 0;
-     CurPageOffset := PageOffset[Page];
+     CurPageOffset := PageOffset[Page] + (ScreenOffset.Y * PlaneWidth) + (ScreenOffset.X div 4);
      StartYOffset := Y * PlaneWidth + (X div 4);
      Height := Image^.Height;
      Width := Image^.Width shr 2;
@@ -708,7 +757,7 @@ begin
      end;
 end;
 
-procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
+procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage; ScreenOffset: TCoordinate);
 var
    ImageData: Pointer;
    Plane: Byte;
@@ -729,7 +778,8 @@ begin
      EndOffset := Ofs(Image^.Data^) + Image^.MemSize;
      LineOffset := PlaneWidth - (Image^.Width div 4);
      Plane := 0;
-     CurPageOffset := PageOffset[Page];
+
+     CurPageOffset := PageOffset[Page] + ScreenOffset.Y * PlaneWidth + (ScreenOffset.X div 4);
      StartYOffset := Y * PlaneWidth + (X div 4);
      Height := Image^.Height;
      Width := Image^.Width shr 2;

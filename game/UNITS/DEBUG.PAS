@@ -3,7 +3,7 @@ unit Debug;
 
 interface
 
-uses Sprite;
+uses Sprite, Types;
 
 type
     FpsInfo = object(TSprite)
@@ -15,7 +15,7 @@ type
             CurrentFps: Real;
             constructor Init(TheSampleSize: Word);
             procedure Update(Frame: LongInt); virtual;
-            procedure Draw(Page: Byte); virtual;
+            procedure Draw(Page: Byte; ScreenOffset: TCoordinate); virtual;
     end;
 
     PStopwatch = ^TStopwatch;
@@ -159,7 +159,7 @@ begin
      Frames := 0;
 end;
 
-procedure FpsInfo.Draw(Page: Byte);
+procedure FpsInfo.Draw(Page: Byte; ScreenOffset: TCoordinate);
 var
    S: String;
 begin
