@@ -109,8 +109,8 @@ begin
      {StartLayer := 1;}
      {EndLayer := 0;}
      for Layer := EndLayer downto StartLayer do begin
-         for Row := EndRow downto StartRow do begin
-             for Col := EndCol downto StartCol do begin
+         for Row := StartRow to EndRow do begin
+             for Col := StartCol to EndCol do begin
                  with TilePositions[Layer,Row,Col] do begin
                      TCol := Offset.X + Col + 1;
                      TRow := (Offset.Y + Row) shl 1;
