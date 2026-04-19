@@ -7,7 +7,8 @@ uses
     Types,
     Image,
     GameMap,
-    Sprite;
+    Sprite,
+    Drivers;
 
 type
     PMapRenderer = ^TMapRenderer;
@@ -45,7 +46,8 @@ implementation
 uses
     PCXImg,
     VGA,
-    ModeX;
+    ModeX,
+    Debug;
 
 const
      MapCols = LogicalScreenWidth div TileWidth;
@@ -93,6 +95,8 @@ begin
          Start
      );
      LastRedraw[Page] := Start;
+
+     X_SetScrollOffset(Page, Start);
 end;
 
 procedure TMapRenderer.DrawLayersCoveringSprite(
@@ -135,14 +139,25 @@ procedure TMapRenderer.Update(Page: Byte; Scroll: TCoordinate);
 var
    NextRedraw: TCoordinate;
    MapRedrawStart: TCoordinate;
+   SW: PStopwatch;
+   S: String;
+   Vals: array[0..1] of LongInt;
 begin
      NextRedraw.X := Scroll.X div TileWidth;
      NextRedraw.Y := Scroll.Y div TileHeight;
      MapRedrawStart.X := NextRedraw.X * TileWidth;
      MapRedrawStart.Y := NextRedraw.Y * TileHeight;
 
+     X_SetScrollOffset(Page, MapRedrawStart);
+
      if NextRedraw.X > LastRedraw[Page].X then begin
          X_ClearZBufLastCol(Page);
+
+         Vals[0] := Page;
+         Vals[1] := NextRedraw.X;
+         FormatStr(S, 'Draw last %d/%d', Vals);
+         SW := Profiler^.Stopwatch(S);
+         SW^.Start;
 
          DrawPartialMap(
              Page,
@@ -152,8 +167,11 @@ begin
              0, MapRows - 1,
              MapRedrawStart
          );
+
+         SW^.Stop;
      end else if NextRedraw.X < LastRedraw[Page].X then begin
          X_ClearZBufFirstCol(Page);
+
          DrawPartialMap(
              Page,
              NextRedraw,
@@ -165,6 +183,8 @@ begin
      end;
 
      if NextRedraw.Y > LastRedraw[Page].Y then begin
+         X_CLearZBufLastRow(Page);
+
          DrawPartialMap(
              Page,
              NextRedraw,
@@ -174,6 +194,8 @@ begin
              MapRedrawStart
          );
      end else if NextRedraw.Y < LastRedraw[Page].Y then begin
+         X_CLearZBufFirstRow(Page);
+
          DrawPartialMap(
              Page,
              NextRedraw,

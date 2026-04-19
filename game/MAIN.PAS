@@ -27,19 +27,19 @@ begin
      MaxScrollX := (Map.Width * TileWidth) - 320 - 2 * TileWidth;
      MaxScrollY := ((Map.Height div 2) * TileHeight) - 240 - 2 * TileHeight;
 
-     if Player.X < 160 then
+     if Player.MapX < 160 then
          MapOrigin.X := 0
-     else if (Player.X - 160) > MaxScrollX then
+     else if (Player.MapX - 160) > MaxScrollX then
          MapOrigin.X := MaxScrollX
      else
-         MapOrigin.X := Player.X - 160;
+         MapOrigin.X := Player.MapX - 160;
 
-     if Player.Y < 120 then
+     if Player.MapY < 120 then
          MapOrigin.Y := 0
-     else if (Player.Y - 120) > MaxScrollY then
+     else if (Player.MapY - 120) > MaxScrollY then
          MapOrigin.Y := MaxScrollY
      else
-         MapOrigin.Y := Player.Y - 120;
+         MapOrigin.Y := Player.MapY - 120;
 end;
 
 procedure MainLoop;
@@ -64,8 +64,8 @@ begin
 
      Player.Init(@Map, 'assets\player.pcx');
      Player.D := E;
-     Player.X := 64;
-     Player.Y := 64;
+     Player.MapX := 64;
+     Player.MapY := 64;
 
      UpdateMapScroll(Player, MapScroll);
 
@@ -126,12 +126,18 @@ begin
 
      MainLoop;
 
-     SetVideoStartAddress(PageOffset[0] + ScreenOffset, 0);
-
+     SetVideoStartAddress(PageOffset[0] + ScreenOffset + 8, 0);
      X_Fill(0);
      {X_ClearZBufFirstCol(0);}
+     {X_ClearZBufFirstRow(0);}
+     {X_ClearZBufLastRow(0);}
      X_DrawZBuf(0);
      ReadLn;
+
+     {SetVideoStartAddress(PageOffset[1] + ScreenOffset + 8, 0);
+     X_Fill(0);
+     X_DrawZBuf(1);
+     ReadLn;}
 
      SetVideoMode(3);
 

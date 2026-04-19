@@ -15,7 +15,7 @@ type
             CurrentFps: Real;
             constructor Init(TheSampleSize: Word);
             procedure Update(Frame: LongInt); virtual;
-            procedure Draw(Page: Byte; ScreenOffset: TCoordinate); virtual;
+            procedure Draw(Page: Byte); virtual;
     end;
 
     PStopwatch = ^TStopwatch;
@@ -159,7 +159,7 @@ begin
      Frames := 0;
 end;
 
-procedure FpsInfo.Draw(Page: Byte; ScreenOffset: TCoordinate);
+procedure FpsInfo.Draw(Page: Byte);
 var
    S: String;
 begin

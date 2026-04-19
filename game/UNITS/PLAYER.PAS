@@ -15,12 +15,13 @@ type
         LastTurn: LongInt;
         Sprites: array[TDirection] of PImage;
         DirtyRect: array[0..1] of TDirtyRect;
+        MapX, MapY: Word;
 
         constructor Init(TheMap: PGameMap; SpritesFilename: String);
         destructor Destroy;
         procedure Push;
         procedure Update(Frame: LongInt); virtual;
-        procedure Draw(Page: Byte; ScreenOffset: TCoordinate); virtual;
+        procedure Draw(Page: Byte); virtual;
         procedure Turn(Frame: LongInt; Steps: ShortInt);
         procedure Ollie;
     end;
@@ -113,7 +114,7 @@ end;
 
 procedure TPlayer.Push;
 begin
-     PushCycle := PushCycleLength;
+     PushCycle := 3;{PushCycleLength;}
 end;
 
 procedure TPlayer.Turn(Frame: LongInt; Steps: ShortInt);
@@ -143,8 +144,8 @@ procedure TPlayer.Update;
 var
    Next: TCoordinate;
 begin
-     Next.X := X;
-     Next.Y := Y;
+     Next.X := MapX;
+     Next.Y := MapY;
 
      if (Frame mod 8 = 0) and (Z > 0) then Dec(Z);
 
@@ -187,21 +188,23 @@ begin
         Dec(PushCycle);
      end;
 
-     X := Next.X;
-     Y := Next.Y;
+     MapX := Next.X;
+     MapY := Next.Y;
 
-     if X < 16 then X := 16;
-     if Y < 16 then Y := 16;
-     if X > (Map^.Width * TileWidth - 48) then
-        X := Map^.Width * TileWidth - 48;
-     if Y > (Map^.Height * TileHeight - 48) then
-        Y := Map^.Height * TileHeight - 48;
+     if MapX < 16 then MapX := 16;
+     if MapY < 16 then MapY := 16;
+     if MapX > (Map^.Width * TileWidth - 48) then
+        MapX := Map^.Width * TileWidth - 48;
+     if MapY > (Map^.Height * TileHeight - 48) then
+        MapY := Map^.Height * TileHeight - 48;
 
+     X := MapX - ScrollOffset[0].X;
+     Y := MapY - ScrollOffset[0].Y;
 end;
 
-procedure TPlayer.Draw(Page: Byte; ScreenOffset: TCoordinate);
+procedure TPlayer.Draw(Page: Byte);
 begin
-     X_DrawAlpha(Page, X, Y - Z, (Y + 32) div 8, Sprites[D], ScreenOffset);
+     X_DrawAlpha(Page, X, Y - Z, (MapY + 32) div 8, Sprites[D]);
 end;
 
 

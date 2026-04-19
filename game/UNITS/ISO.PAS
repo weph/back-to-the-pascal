@@ -77,6 +77,11 @@ begin
      Tiles[3].Left := Img.ImageAt(64, 0, 16, 24);
      Tiles[3].Right := Img.ImageAt(80, 0, 16, 24);
 
+     Tiles[4].Top := Img.ImageAt(96, 0, 32, 8);
+     Tiles[4].Bottom := Img.ImageAt(96, 8, 32, 16);
+     Tiles[4].Left := Img.ImageAt(96, 0, 16, 24);
+     Tiles[4].Right := Img.ImageAt(114, 0, 16, 24);
+
      Img.Destroy;
 end;
 
@@ -122,6 +127,8 @@ begin
                      SX := X;
                      SY := Y;
 
+                     If (Sx < 0) or (Sy < 0) then continue;
+
                      Z := Row * 2;
                      if Layer > 0 then Inc(Z, Layer + 1);
 
@@ -131,19 +138,17 @@ begin
                             SX,
                             SY + 8,
                             Z + 2,
-                            Tiles[TileBottom].Top,
-                            Start
+                            Tiles[TileBottom].Top
                         );
                      end;
 
                      if TileRight <> 0 then begin
-                        X_DrawAlphaZ(
+                         X_DrawAlphaZ(
                             Page,
                             SX + 16,
                             SY,
                             Z + 1,
-                            Tiles[TileRight].Left,
-                            Start
+                            Tiles[TileRight].Left
                         );
                      end;
 
@@ -153,8 +158,7 @@ begin
                             SX,
                             SY,
                             Z + 1,
-                            Tiles[TileLeft].Right,
-                            Start
+                            Tiles[TileLeft].Right
                         );
                      end;
 
@@ -164,8 +168,7 @@ begin
                             SX,
                             SY,
                             Z,
-                            Tiles[TileTop].Bottom,
-                            Start
+                            Tiles[TileTop].Bottom
                         );
                      end;
                  end;

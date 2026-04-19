@@ -124,7 +124,7 @@ begin
      end;
 
      for Sprite := 0 to NumSprites - 1 do begin
-         Sprites[Sprite]^.Draw(Page, NextRedraw);
+         Sprites[Sprite]^.Draw(Page);
      end;
 end;
 

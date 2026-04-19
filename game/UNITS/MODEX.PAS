@@ -5,15 +5,26 @@ interface
 
 uses Globals, Image, Types;
 
+var
+   ScrollOffset: array[0..1] of TCoordinate;
+
+procedure X_SetScrollOffset(Page: Byte; Offset: TCoordinate);
+
 procedure X_InitZBuf;
 
 procedure X_DestroyZBuf;
 
 procedure X_DrawZBuf(Page: Byte);
 
+procedure X_ClearZBuf(Page: Byte);
+
 procedure X_ClearZBufFirstCol(Page: Byte);
 
 procedure X_ClearZBufLastCol(Page: Byte);
+
+procedure X_ClearZBufFirstRow(Page: Byte);
+
+procedure X_ClearZBufLastRow(Page: Byte);
 
 procedure X_DumpZBuf(Page: Byte; X, Y, Width, Height: Word);
 
@@ -33,19 +44,24 @@ procedure X_DrawOpaque(Page: Byte; X, Y: Word; Image: PImage);
 
 procedure X_Draw16x16Opaque(Page: Byte; X, Y: Word; Image: PImage);
 
-procedure X_DrawAlpha(Page: Byte; X, Y: Word; Z: Byte; Image: PImage; ScreenOffset: TCoordinate);
+procedure X_DrawAlpha(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
 
-procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage; ScreenOffset: TCoordinate);
+procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
 
 procedure X_CopyToSysMem(Page: Byte; X, Y: Word; Width, Height: Byte; Target: Pointer);
 
 
 implementation
 
-uses VGA, Malloc;
+uses VGA, Malloc, Debug, FMem;
 
 var
    ZBuffer: array[0..1,0..3] of Pointer;
+
+procedure X_SetScrollOffset(Page: Byte; Offset: TCoordinate);
+begin
+     ScrollOffset[Page] := Offset;
+end;
 
 procedure X_InitZBuf;
 var
@@ -67,6 +83,15 @@ begin
          for Plane := 0 to 3 do begin
              M_Free(ZBuffer[Page][Plane], PlaneWidth * LogicalScreenHeight);
          end;
+     end;
+end;
+
+procedure X_ClearZBuf(Page: Byte);
+var
+   Plane: Byte;
+begin
+     for Plane := 0 to 3 do begin
+         FillChar(ZBuffer[Page][Plane]^, PlaneWidth * LogicalScreenHeight, 0);
      end;
 end;
 
@@ -98,22 +123,96 @@ var
    Plane: Byte;
    Y: Word;
    PSeg, POfs: Word;
+   SW: PStopwatch;
 begin
+     SW := Profiler^.Stopwatch('ClearZBufLastCol');
+     SW^.Start;
      for Plane := 0 to 3 do begin
          PSeg := Seg(ZBuffer[Page][Plane]^);
          POfs := Ofs(ZBuffer[Page][Plane]^);
 
          for Y := 0 to LogicalScreenHeight do begin
              Move(
-                  Ptr(PSeg, POfs + Y * PlaneWidth + 8)^,
-                  Ptr(PSeg, POfs + Y * PlaneWidth)^,
+                  Ptr(PSeg, POfs + 8)^,
+                  Ptr(PSeg, POfs)^,
                   PlaneWidth - 8
              );
 
-             FillChar(Ptr(PSeg, POfs + Y * PlaneWidth + PlaneWidth - 8)^, 8, 0);
+             FillChar(Ptr(PSeg, POfs + PlaneWidth - 8)^, 8, 0);
+
+             Inc(POfs, PlaneWidth);
          end;
      end;
+     SW^.Stop;
 end;
+
+
+procedure X_ClearZBufFirstRow(Page: Byte);
+var
+   Plane: Byte;
+   PSeg, POfs: Word;
+   SW: PStopwatch;
+   RowSize: Word;
+   Offset: Word;
+begin
+     SW := Profiler^.Stopwatch('ClearZBufLastRow');
+     SW^.Start;
+
+     RowSize := PlaneWidth * 16;
+     Offset := (PlaneWidth * LogicalScreenHeight) - RowSize;
+
+     for Plane := 0 to 3 do begin
+         PSeg := Seg(ZBuffer[Page][Plane]^);
+         POfs := Ofs(ZBuffer[Page][Plane]^);
+
+         Move(
+              Ptr(PSeg, POfs)^,
+              Ptr(PSeg, POfs + RowSize)^,
+              Offset
+         );
+
+         FillChar(
+              Ptr(PSeg, POfs)^,
+              RowSize,
+              0
+         );
+     end;
+     SW^.Stop;
+end;
+
+procedure X_ClearZBufLastRow(Page: Byte);
+var
+   Plane: Byte;
+   PSeg, POfs: Word;
+   SW: PStopwatch;
+   RowSize: Word;
+   Offset: Word;
+begin
+     SW := Profiler^.Stopwatch('ClearZBufLastRow');
+     SW^.Start;
+
+     RowSize := PlaneWidth * 16;
+     Offset := (PlaneWidth * LogicalScreenHeight) - RowSize;
+
+     for Plane := 0 to 3 do begin
+         PSeg := Seg(ZBuffer[Page][Plane]^);
+         POfs := Ofs(ZBuffer[Page][Plane]^);
+
+         Move(
+              Ptr(PSeg, POfs + RowSize)^,
+              Ptr(PSeg, POfs)^,
+              Offset
+         );
+
+         FillChar(
+              Ptr(PSeg, POfs + Offset)^,
+              RowSize,
+              0
+         );
+     end;
+     SW^.Stop;
+end;
+
 
 procedure X_DrawZBuf(Page: Byte);
 var
@@ -211,7 +310,7 @@ end;
 procedure X_Draw(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
 begin
      if Image^.TransparencyEncoded then
-         {X_DrawAlpha(Page, X, Y, Z, Image)}
+         X_DrawAlpha(Page, X, Y, Z, Image)
      else
          X_Draw16x16Opaque(Page, X, Y, Image);
 end;
@@ -229,7 +328,7 @@ begin
      Width := Image^.Width shr 3;
      Height := Image^.Height;
      ImageData := Image^.Data;
-     StartY := PageOffset[Page] + Y * PlaneWidth + (X shr 2);
+     StartY := PageOffset[Page] + (ScrollOffset[Page].Y + Y) * PlaneWidth + (ScrollOffset[Page].X + X) shr 2;
      RemPlaneWidth := PlaneWidth - Image^.Width shr 2;
 
      Plane := 0;
@@ -590,7 +689,7 @@ begin
      end;
 end;
 
-procedure X_DrawAlpha(Page: Byte; X, Y: Word; Z: Byte; Image: PImage; ScreenOffset: TCoordinate);
+procedure X_DrawAlpha(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
 var
    ImageData: Pointer;
    Plane: Byte;
@@ -610,7 +709,7 @@ begin
      EndOffset := Ofs(Image^.Data^) + Image^.MemSize;
      LineOffset := PlaneWidth - (Image^.Width div 4);
      Plane := 0;
-     CurPageOffset := PageOffset[Page] + (ScreenOffset.Y * PlaneWidth) + (ScreenOffset.X div 4);
+     CurPageOffset := PageOffset[Page] + (ScrollOffset[Page].Y * PlaneWidth) + (ScrollOffset[Page].X shr 2);
      StartYOffset := Y * PlaneWidth + (X div 4);
      Height := Image^.Height;
      Width := Image^.Width shr 2;
@@ -621,7 +720,7 @@ begin
      end;
 
      PPlaneData := @PlaneData;
-     PZBuffer := @ZBuffer;
+     PZBuffer := @ZBuffer[Page];
 
      {
         ds:si image data
@@ -757,7 +856,7 @@ begin
      end;
 end;
 
-procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage; ScreenOffset: TCoordinate);
+procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
 var
    ImageData: Pointer;
    Plane: Byte;
@@ -779,7 +878,7 @@ begin
      LineOffset := PlaneWidth - (Image^.Width div 4);
      Plane := 0;
 
-     CurPageOffset := PageOffset[Page] + ScreenOffset.Y * PlaneWidth + (ScreenOffset.X div 4);
+     CurPageOffset := PageOffset[Page] + ScrollOffset[Page].Y * PlaneWidth + (ScrollOffset[Page].X shr 2);
      StartYOffset := Y * PlaneWidth + (X div 4);
      Height := Image^.Height;
      Width := Image^.Width shr 2;
@@ -791,7 +890,7 @@ begin
      end;
 
      PPlaneData := @PlaneData;
-     PZBuffer := @ZBuffer;
+     PZBuffer := @ZBuffer[Page];
 
      {
         ds:si image data
@@ -1118,7 +1217,7 @@ var
    LineWidth, LineOffset: Word;
    StartOffset: Word;
 begin
-     StartOffset := PageOffset[Page] + Y * PlaneWidth + (X shr 2);
+     StartOffset := PageOffset[Page] + (ScrollOffset[Page].Y + Y) * PlaneWidth + (ScrollOffset[Page].X + X) shr 2;
      LineWidth := Width shr 2;
      LineOffset := PlaneWidth - LineWidth;
 
