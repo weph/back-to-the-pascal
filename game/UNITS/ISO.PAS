@@ -132,7 +132,7 @@ begin
                      If (Sx < 0) or (Sy < 0) then continue;
 
                      Z := (TRow + Layer);
-                     {if Layer > 0 then Inc(Z, Layer + 1);}
+                     if Layer > 0 then Inc(Z, Layer);
 
                      if TileBottom <> 0 then begin
                         X_DrawAlphaZ(
@@ -197,7 +197,7 @@ begin
                      If (Sx < 0) or (Sy < 0) then continue;
 
                      Z := (TRow + Layer);
-                     {if Layer > 0 then Inc(Z, Layer + 1);}
+                     if Layer > 0 then Inc(Z, Layer);
 
                      if TileBottom <> 0 then begin
                         X_DrawAlphaZ(

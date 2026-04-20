@@ -156,8 +156,8 @@ var
    RowSize: Word;
    Offset: Word;
 begin
-     SW := Profiler^.Stopwatch('ClearZBufLastRow');
-     SW^.Start;
+     {SW := Profiler^.Stopwatch('ClearZBufLastRow');
+     SW^.Start;}
 
      RowSize := PlaneWidth * 16;
      Offset := (PlaneWidth * LogicalScreenHeight) - RowSize;
@@ -178,7 +178,7 @@ begin
               0
          );
      end;
-     SW^.Stop;
+     {SW^.Stop;}
 end;
 
 procedure X_ClearZBufLastRow(Page: Byte);

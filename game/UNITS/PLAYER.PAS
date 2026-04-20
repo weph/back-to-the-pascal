@@ -206,7 +206,13 @@ end;
 
 procedure TPlayer.Draw(Page: Byte);
 begin
-     X_DrawAlpha(Page, X, Y - Z, (MapY + 32) div 8, Sprites[D]);
+     X_DrawAlpha(
+         Page,
+         X,
+         Y - Z,
+         ((MapY + 32) div 8) + 1,
+         Sprites[D]
+     );
 end;
 
 
