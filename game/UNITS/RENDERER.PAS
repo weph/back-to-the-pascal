@@ -104,14 +104,10 @@ procedure R_Render(Page: Byte; Scroll: TCoordinate);
 var
    Sprite: Byte;
    DRY: Word;
-   NextRedraw: TCoordinate;
 begin
      for Sprite := 0 to NumSprites - 1 do begin
          DrawDirtyRect(Page, DirtyRects[Page][Sprite]);
      end;
-
-     NextRedraw.X := Scroll.X div TileWidth;
-     NextRedraw.Y := Scroll.Y div TileHeight;
 
      MapRenderer^.Update(Page, Scroll);
 

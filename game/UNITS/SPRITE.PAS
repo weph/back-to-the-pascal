@@ -11,7 +11,7 @@ type
         Width, Height: Byte;
 
         constructor Init(_X, _Y, _Z: Word; _Width, _Height: Byte);
-        procedure Update(Frame: LongInt); virtual;
+        procedure Update(Page: Byte; Frame: LongInt); virtual;
         procedure Draw(Page: Byte); virtual;
     end;
 
@@ -27,7 +27,7 @@ begin
      Height := _Height;
 end;
 
-procedure TSprite.Update(Frame: LongInt);
+procedure TSprite.Update(Page: Byte; Frame: LongInt);
 begin
      Halt(1);
 end;

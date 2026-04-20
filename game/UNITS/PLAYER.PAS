@@ -16,11 +16,12 @@ type
         Sprites: array[TDirection] of PImage;
         DirtyRect: array[0..1] of TDirtyRect;
         MapX, MapY: Word;
+        MapScroll: TCoordinate;
 
         constructor Init(TheMap: PGameMap; SpritesFilename: String);
         destructor Destroy;
         procedure Push;
-        procedure Update(Frame: LongInt); virtual;
+        procedure Update(Page: Byte; Frame: LongInt); virtual;
         procedure Draw(Page: Byte); virtual;
         procedure Turn(Frame: LongInt; Steps: ShortInt);
         procedure Ollie;
@@ -114,7 +115,8 @@ end;
 
 procedure TPlayer.Push;
 begin
-     PushCycle := 3;{PushCycleLength;}
+     PushCycle := PushCycleLength;
+     {PushCycle := 3;}
 end;
 
 procedure TPlayer.Turn(Frame: LongInt; Steps: ShortInt);
@@ -198,8 +200,8 @@ begin
      if MapY > (Map^.Height * TileHeight - 48) then
         MapY := Map^.Height * TileHeight - 48;
 
-     X := MapX - ScrollOffset[0].X;
-     Y := MapY - ScrollOffset[0].Y;
+     X := MapX - ScrollOffset[Page].X;
+     Y := MapY - ScrollOffset[Page].Y;
 end;
 
 procedure TPlayer.Draw(Page: Byte);

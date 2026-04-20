@@ -14,7 +14,7 @@ type
         public
             CurrentFps: Real;
             constructor Init(TheSampleSize: Word);
-            procedure Update(Frame: LongInt); virtual;
+            procedure Update(Page: Byte; Frame: LongInt); virtual;
             procedure Draw(Page: Byte); virtual;
     end;
 

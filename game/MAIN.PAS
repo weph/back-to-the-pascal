@@ -72,7 +72,7 @@ begin
      X_Fill(0);
 
      R_AddSprite(@Player);
-     R_AddSprite(@FPS);
+     {R_AddSprite(@FPS);}
 
      R_InitScreen;
 
@@ -82,9 +82,12 @@ begin
      Break := false;
      EnableKeyboardHandler;
      while Running do begin
-           FPS.Update(Frame);
-           Player.Update(Frame);
+           FPS.Update(Page, Frame);
+           Player.Update(Page, Frame);
            UpdateMapScroll(Player, MapScroll);
+
+           Player.X := Player.MapX - (MapScroll.X div TileWidth) * TileWidth;
+           Player.Y := Player.MapY - (MapScroll.Y div TileHeight) * TileHeight;
 
            FPS.X := MapScroll.X + 32;
            FPS.Y := MapScroll.Y + 16;
@@ -92,7 +95,7 @@ begin
            R_Render(Page, MapScroll);
 
            SetVideoStartAddress(
-               PageOffset[Page] + ScreenOffset + (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2,
+               PageOffset[Page] + {ScreenOffset +} (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2,
                MapScroll.X
            );
 
