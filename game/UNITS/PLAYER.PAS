@@ -115,8 +115,8 @@ end;
 
 procedure TPlayer.Push;
 begin
-     PushCycle := PushCycleLength;
-     {PushCycle := 3;}
+     {PushCycle := PushCycleLength;}
+     PushCycle := 3;
 end;
 
 procedure TPlayer.Turn(Frame: LongInt; Steps: ShortInt);

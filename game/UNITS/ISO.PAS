@@ -115,12 +115,12 @@ begin
      {EndLayer := 0;}
 
      if (StartRow = 0) and (EndRow = 0) then begin
-        Row := StartRow;
         for Layer := EndLayer downto StartLayer do begin
+            Row := (Layer + 1) div 2;
              for Col := StartCol to EndCol do begin
-                 with TilePositions[Layer,Row+Layer,Col] do begin
+                 with TilePositions[Layer,Row,Col] do begin
                      TCol := Offset.X + Col + 1;
-                     TRow := (Offset.Y + Row+Layer) shl 1;
+                     TRow := (Offset.Y + Row) shl 1;
                      TileTop := Map^.TileAt(TCol, TRow, Layer);
                      TileLeft := Map^.TileAt(TCol - 1, TRow + 1, Layer);
                      TileRight := Map^.TileAt(TCol, TRow + 1, Layer);
@@ -131,7 +131,7 @@ begin
 
                      If (Sx < 0) or (Sy < 0) then continue;
 
-                     Z := (Row + Layer + Layer) * 2;
+                     Z := (TRow + Layer);
                      {if Layer > 0 then Inc(Z, Layer + 1);}
 
                      if TileBottom <> 0 then begin
@@ -196,7 +196,7 @@ begin
 
                      If (Sx < 0) or (Sy < 0) then continue;
 
-                     Z := (Row + Layer) * 2;
+                     Z := (TRow + Layer);
                      {if Layer > 0 then Inc(Z, Layer + 1);}
 
                      if TileBottom <> 0 then begin

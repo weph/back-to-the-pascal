@@ -95,7 +95,7 @@ begin
            R_Render(Page, MapScroll);
 
            SetVideoStartAddress(
-               PageOffset[Page] + {ScreenOffset +} (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2,
+               PageOffset[Page] + ScreenOffset + (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2,
                MapScroll.X
            );
 
