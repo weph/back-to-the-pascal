@@ -56,6 +56,7 @@ implementation
 uses VGA, Malloc, Debug, FMem;
 
 var
+   PlaneShiftData: array[0..3,0..3] of Word;
    ZBuffer: array[0..1,0..3] of Pointer;
 
 procedure X_SetScrollOffset(Page: Byte; Offset: TCoordinate);
@@ -698,7 +699,6 @@ var
    EndOffset: Word;
    Height: Byte;
    Width: Word;
-   PlaneData: array[0..3] of Word;
    PPlaneData: Pointer;
    i: Byte;
    PlaneShift: Byte;
@@ -715,11 +715,7 @@ begin
      Width := Image^.Width shr 2;
 
      PlaneShift := X mod 4;
-     for i := 0 to 3 do begin
-         PlaneData[i] := (1 shl ((i + PlaneShift) mod 4) shl 8) or (Ord(i + PlaneShift > 3));
-     end;
-
-     PPlaneData := @PlaneData;
+     PPlaneData := @PlaneShiftData[PlaneShift];
      PZBuffer := @ZBuffer[Page];
 
      {
@@ -865,7 +861,6 @@ var
    EndOffset: Word;
    Height: Byte;
    Width: Byte;
-   PlaneData: array[0..3] of Word;
    PPlaneData: Pointer;
    i: Byte;
    PlaneShift: Byte;
@@ -883,13 +878,8 @@ begin
      Height := Image^.Height;
      Width := Image^.Width shr 2;
 
-
      PlaneShift := X mod 4;
-     for i := 0 to 3 do begin
-         PlaneData[i] := (1 shl ((i + PlaneShift) mod 4) shl 8) or (Ord(i + PlaneShift > 3));
-     end;
-
-     PPlaneData := @PlaneData;
+     PPlaneData := @PlaneShiftData[PlaneShift];
      PZBuffer := @ZBuffer[Page];
 
      {
@@ -1035,10 +1025,9 @@ var
    EndOffset: Word;
    Height: Byte;
    Width: Word;
-   PlaneData: array[0..3] of Word;
+   PlaneShift: Byte;
    PPlaneData: Pointer;
    i: Byte;
-   PlaneShift: Byte;
    PZBuffer: Pointer;
    CurPageOffset: Word;
 begin
@@ -1052,11 +1041,7 @@ begin
      Width := Image^.Width shr 2;
 
      PlaneShift := X mod 4;
-     for i := 0 to 3 do begin
-         PlaneData[i] := (1 shl ((i + PlaneShift) mod 4) shl 8) or (Ord(i + PlaneShift > 3));
-     end;
-
-     PPlaneData := @PlaneData;
+     PPlaneData := @PlaneShiftData[PlaneShift];
      PZBuffer := @ZBuffer[Page];
 
      {
@@ -1271,5 +1256,13 @@ begin
      end;
 end;
 
+var
+   Shift, Plane: Byte;
 
+begin
+     for Shift := 0 to 3 do begin
+         for Plane := 0 to 3 do begin
+             PlaneShiftData[Shift][Plane] := (1 shl ((Plane + Shift) mod 4) shl 8) or (Ord(Plane + Shift > 3));
+         end;
+     end;
 end.
