@@ -1,64 +1,36 @@
 # Back to the Pascal
 
-Back to the Pascal is a little project of mine, where I'm trying to build a game in Turbo Pascal on a 386DX-40.
-I'm documenting my progress in a [weekly video series on YouTube][Playlist] and sharing the code here on GitHub so
-people can follow along, or maybe even use it as a starting point for their own game somwhere down the line.
+**Back to the Pascal** is about a game I wanted to build in the early '90s, but couldn't, because I wasn't a good enough
+programmer yet.
+35 years later, I decided to see if I could finally pull it off using the same hardware (i386) and programming
+language (Turbo Pascal) I used back then.
 
-If you wanna learn more about the backstory and why I'm doing this, check out this video:
+If you want to learn more about the backstory, check out this video:
 
 [![Finishing the Game I Started 35 Years Ago](https://weph.dev/back-to-the-pascal/yt-bttp.jpg)](https://www.youtube.com/watch?v=EeAz5rUbE9A&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_)
 
-## Week 1: Pixels, Tiles, Sprites
+## Project Structure
 
-[![Pixels, Tiles, Sprites - Week 1 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week1.jpg)](https://www.youtube.com/watch?v=eDpfSYvnaWI&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_)
+```
+.
+|-- game                 // game root folder 
+|   |-- ASSETS              // game assets (tiles, sprites, maps)
+|   |-- DEMO                // demo programs (experiments, benchmarks)
+|   |-- MAIN.PAS            // the actual game
+|   |-- UNITS               // units
+`-- tiled-exporter       // Map export plugin for Tiled
+```
 
-- [Monday](https://github.com/weph/back-to-the-pascal/tree/week1-monday)
-- [Tuesday](https://github.com/weph/back-to-the-pascal/tree/week1-tuesday)
-- [Wednesday](https://github.com/weph/back-to-the-pascal/tree/week1-wednesday)
-- [Thursday](https://github.com/weph/back-to-the-pascal/tree/week1-thursday)
-- [Friday](https://github.com/weph/back-to-the-pascal/tree/week1-friday)
+## Running the Code
 
-## Week 2: Making the Map Scroll
+To run the code you need an **IBM‑compatible PC** (or DOSBox) and a copy of **Turbo Pascal 7**.
+My development system is a 386DX-40.
 
-[![Making the Map Scroll - Week 2 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week2.jpg)](https://www.youtube.com/watch?v=K-NcPQuWFrE&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_)
+If you use DOSBox, the following settings give roughly the same performance:
 
-- [Monday](https://github.com/weph/back-to-the-pascal/tree/week2-monday)
-- [Tuesday](https://github.com/weph/back-to-the-pascal/tree/week2-tuesday)
-- [Wednesday](https://github.com/weph/back-to-the-pascal/tree/week2-wednesday)
-- [Thursday](https://github.com/weph/back-to-the-pascal/tree/week2-thursday)
-- [Friday](https://github.com/weph/back-to-the-pascal/tree/week2-friday)
+- **CPU Type:** 386
+- **CPU Cycles:** 8000
 
-## Week 3: Loading images, tiles, and maps
-
-[![Loading images, tiles, and maps - Week 3 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week3.jpg)](https://www.youtube.com/watch?v=VXTW_LACuV8&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_)
-
-- [Tuesday](https://github.com/weph/back-to-the-pascal/tree/week3-tuesday)
-- [Wednesday](https://github.com/weph/back-to-the-pascal/tree/week3-wednesday)
-- [Thursday](https://github.com/weph/back-to-the-pascal/tree/week3-thursday)
-- [Friday](https://github.com/weph/back-to-the-pascal/tree/week3-friday)
-
-## Week 4: I Cleaned Up the Code and Created a Canvas
-
-[![I Cleaned Up the Code and Created a Canvas - Week 4 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week4.jpg)](https://www.youtube.com/watch?v=-CtNYqdGdXw&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_)
-
-- [Friday](https://github.com/weph/back-to-the-pascal/tree/week4)
-
-## Week 5: Did My Abstraction Slow Everything Down?
-
-[![Did My Abstraction Slow Everything Down? - Week 5 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week5.jpg)](https://www.youtube.com/watch?v=xLAD8_8eNhw&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_)
-
-- [Friday](https://github.com/weph/back-to-the-pascal/tree/week5)
-
-## Week 6: New Direction?
-
-[![New Direction? - Week 6 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-week6.jpg)](https://www.youtube.com/watch?v=_kDptFneAdw&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_)
-
-- [Friday](https://github.com/weph/back-to-the-pascal/tree/week6)
-
-## Episode 7: Isometric Struggles
-
-[![Isometric Struggles - Episode 7 of Back to the Pascal](https://weph.dev/back-to-the-pascal/yt-bttp-episode7.jpg)](https://www.youtube.com/watch?v=2JZ35t_8q1A&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_)
-
-- [Friday](https://github.com/weph/back-to-the-pascal/tree/episode7)
-
-[Playlist]: https://www.youtube.com/watch?v=EeAz5rUbE9A&list=PLpqQb-X-yll7K1JUmslRWf2i6rKuqdNp_
+1. **Start Turbo Pascal** from the game’s root folder.
+2. Add the `UNITS` directory to the list of unit directories (`Options → Directories`).
+3. Open `MAIN.PAS` (or any file in the `DEMO` folder) and run it with **Ctrl+F9** (or `Run → Run`).
