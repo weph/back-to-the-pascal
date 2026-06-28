@@ -2,7 +2,7 @@ program DrawBenchmarkIso;
 uses Globals, VGA, ModeX, Zentimer, PCXImg, Image, Debug, Drivers;
 
 type
-    TDrawFunc = procedure(Page: Byte; X, Y: Word; Image: PImage);
+    TDrawFunc = procedure(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
 
 const
      Cols = LogicalScreenWidth div 32;
@@ -19,9 +19,9 @@ begin
      for Row := 0 to Rows - 1 do begin
          for Col := 0 to Cols - 1 do begin
              if Row mod 2 = 0 then
-                 Draw(0, Col * 32, Row * 8, Tile)
+                 Draw(0, Col * 32, Row * 8, 255, Tile)
              else
-                 Draw(0, Col * 32 + 16, Row * 8, Tile);
+                 Draw(0, Col * 32 + 16, Row * 8, 255, Tile);
          end;
      end;
 end;

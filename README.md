@@ -31,6 +31,14 @@ If you use DOSBox, the following settings give roughly the same performance:
 - **CPU Type:** 386
 - **CPU Cycles:** 8000
 
+### Using Borland Make
+
+1. Enter the game's root folder
+2. Run `make all` (run `make` without arguments to see all available targets)
+3. Run `build\main` (or any of the other executables)
+
+### From Turbo Pascal's IDE
+
 1. **Start Turbo Pascal** from the game’s root folder.
 2. Add the `UNITS` directory to the list of unit directories (`Options → Directories`).
 3. Open `MAIN.PAS` (or any file in the `DEMO` folder) and run it with **Ctrl+F9** (or `Run → Run`).

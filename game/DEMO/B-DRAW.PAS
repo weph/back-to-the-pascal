@@ -63,7 +63,7 @@ begin
 
      RunBenchmark('X_DrawOpaque', X_DrawOpaque, TileOpaque);
      RunBenchmark('X_Draw16x16Opaque', X_Draw16x16Opaque, TileOpaque);
-     RunBenchmark('X_DrawAlpha', X_DrawAlpha, TileAlpha);
+     {RunBenchmark('X_DrawAlpha', X_DrawAlpha, TileAlpha);}
 
      SetVideoMode(3);
 
