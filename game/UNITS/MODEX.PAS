@@ -397,7 +397,8 @@ var
     StartY: Word;
 begin
      ImageData := Image^.Data;
-     StartY := PageOffset[Page] + Y * PlaneWidth + (X shr 2);
+     StartY := PageOffset[Page] + (ScrollOffset[Page].Y + Y) * PlaneWidth + (ScrollOffset[Page].X + X) shr 2;
+     {StartY := PageOffset[Page] + Y * PlaneWidth + (X shr 2);}
 
      asm
         push ds
