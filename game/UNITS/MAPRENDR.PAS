@@ -23,11 +23,6 @@ type
                 Offset: TCoordinate;
                 Start: TCoordinate
             );
-            procedure DrawLayersCoveringSprite(
-                Page: Byte;
-                Scroll: TCoordinate;
-                Sprite: PSprite
-            );
             procedure DrawPartialMap(
                 Page: Byte;
                 Offset: TCoordinate;
@@ -97,42 +92,6 @@ begin
      LastRedraw[Page] := Start;
 
      X_SetScrollOffset(Page, Start);
-end;
-
-procedure TMapRenderer.DrawLayersCoveringSprite(
-    Page: Byte;
-    Scroll: TCoordinate;
-    Sprite: PSprite
-);
-var
-   X1, Y1, X2, Y2: Integer;
-   StartZ: Word;
-   NextRedraw: TCoordinate;
-   MapRedrawStart: TCoordinate;
-begin
-     if Map^.Depth < 2 then Exit;
-     if Sprite^.Z = 65535 then Exit;
-
-     NextRedraw.X := Scroll.X div TileWidth;
-     NextRedraw.Y := Scroll.Y div TileHeight;
-     MapRedrawStart.X := NextRedraw.X * TileWidth;
-     MapRedrawStart.Y := NextRedraw.Y * TileHeight;
-
-     with Sprite^ do begin
-          X1 := (X div TileWidth) - NextRedraw.X;
-          Y1 := ((Y - Z) div TileHeight) - NextRedraw.Y;
-          X2 := ((X + Width + TileWidth - 1) div TileWidth) - NextRedraw.X;
-          Y2 := ((Y - Z + Height + TileHeight - 1) div TileHeight) - NextRedraw.Y;
-     end;
-
-     DrawPartialMap(
-         Page,
-         NextRedraw,
-         1, Map^.Depth - 1,
-         X1, X2,
-         Y1, Y2,
-         MapRedrawStart
-     );
 end;
 
 procedure TMapRenderer.Update(Page: Byte; Scroll: TCoordinate);
