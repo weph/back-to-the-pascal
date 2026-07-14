@@ -32,6 +32,8 @@ procedure X_Fill(Color: Byte);
 
 procedure X_PutPixel(Page: Byte; X, Y: Word; Color: Byte);
 
+procedure X_PutPixelZ(Page: Byte; X, Y: Word; Z: Byte; Color: Byte);
+
 procedure X_PutChar(Page: Byte; X, Y: Word; C: Char);
 
 procedure X_PutString(Page: Byte; X, Y: Word; S: String);
@@ -106,7 +108,7 @@ begin
          PSeg := Seg(ZBuffer[Page][Plane]^);
          POfs := Ofs(ZBuffer[Page][Plane]^);
 
-         for Y := 0 to LogicalScreenHeight do begin
+         for Y := 0 to LogicalScreenHeight - 1 do begin
              Move(
                   Ptr(PSeg, POfs + Y * PlaneWidth)^,
                   Ptr(PSeg, POfs + Y * PlaneWidth + 8)^,
@@ -132,7 +134,7 @@ begin
          PSeg := Seg(ZBuffer[Page][Plane]^);
          POfs := Ofs(ZBuffer[Page][Plane]^);
 
-         for Y := 0 to LogicalScreenHeight do begin
+         for Y := 0 to LogicalScreenHeight - 1 do begin
              Move(
                   Ptr(PSeg, POfs + 8)^,
                   Ptr(PSeg, POfs)^,
@@ -261,6 +263,25 @@ begin
 
      SelectPlanes(1 shl Plane);
      Mem[$a000:PageOffset[Page] + Y * PlaneWidth + X shr 2] := Color;
+end;
+
+procedure X_PutPixelZ(Page: Byte; X, Y: Word; Z: Byte; Color: Byte);
+var
+   Plane: Byte;
+   Offset: Word;
+   PlaneZBuf: PChar;
+begin
+     Plane := X and 3;
+     Offset := Y * PlaneWidth + X shr 2;
+     PlaneZBuf := PChar(ZBuffer[Page][Plane]);
+
+     if Ord(PlaneZBuf[Offset]) < Z then begin
+        SelectPlanes(1 shl Plane);
+
+        Mem[$a000:PageOffset[Page] + Offset] := Color;
+
+        PlaneZBuf[Offset] := Chr(Z);
+     end;
 end;
 
 procedure X_PutChar(Page: Byte; X, Y: Word; C: Char);
