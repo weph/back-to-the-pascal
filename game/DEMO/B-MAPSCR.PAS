@@ -1,11 +1,18 @@
 program MapScrollBenchmark;
-uses Globals, VGA, ModeX, Types, Iso, Renderer, Debug;
+uses
+    Globals,
+    VGA,
+    ModeX,
+    Types,
+    Iso,
+    Renderer,
+    Debug;
 
 var
-   MapScroll: TCoordinate;
-   MapRenderer: TIsometricMapRenderer;
-   Page: Byte;
-   MaxScrollX: Word;
+    MapScroll: TCoordinate;
+    MapRenderer: TIsometricMapRenderer;
+    Page: Byte;
+    MaxScrollX: Word;
 
 begin
     InitModeX;
@@ -18,10 +25,7 @@ begin
     MapScroll.X := 0;
     MapScroll.Y := 0;
 
-    SetVideoStartAddress(
-        PageOffset[Page] + ScreenOffset + (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2,
-        MapScroll.X
-    );
+    SetVideoStartAddress(PageOffset[Page] + ScreenOffset + (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2, MapScroll.X);
 
     Map.Init('assets\iso2.map');
     MapRenderer.Init(@Map, 'assets\iso2.pcx');
@@ -32,16 +36,16 @@ begin
     R_InitScreen;
 
     while MapScroll.X < MaxScrollX do begin
-          Inc(MapScroll.X);
+        Inc(MapScroll.X);
 
-          R_Render(Page, MapScroll);
+        R_Render(Page, MapScroll);
 
-          SetVideoStartAddress(
-              PageOffset[Page] + ScreenOffset + (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2,
-              MapScroll.X
-          );
+        SetVideoStartAddress(
+            PageOffset[Page] + ScreenOffset + (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2,
+            MapScroll.X
+        );
 
-          Page := (Page + 1) and 1;
+        Page := (Page + 1) and 1;
     end;
 
     SetVideoMode(3);

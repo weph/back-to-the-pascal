@@ -1,29 +1,30 @@
 unit Debug;
 
-
 interface
 
-uses Sprite, Types;
+uses
+    Sprite,
+    Types;
 
 type
-    FpsInfo = object(TSprite)
-        private
-            SampleSize: Word;
-            Frames: Word;
-            LastTs: LongInt;
-        public
-            CurrentFps: Real;
-            constructor Init(TheSampleSize: Word);
-            procedure Update(Page: Byte; Frame: LongInt); virtual;
-            procedure Draw(Page: Byte); virtual;
+    FpsInfo = object (TSprite)
+    private
+        SampleSize: Word;
+        Frames: Word;
+        LastTs: LongInt;
+    public
+        CurrentFps: Real;
+        constructor Init(TheSampleSize: Word);
+        procedure Update(Page: Byte; Frame: LongInt); virtual;
+        procedure Draw(Page: Byte); virtual;
     end;
 
     PStopwatch = ^TStopwatch;
     TStopwatch = object
-        Title: String;
+        Title: string;
         Duration: LongInt;
 
-        constructor Init(TheTitle: String);
+        constructor Init(TheTitle: string);
         procedure Start;
         procedure Stop;
     end;
@@ -39,30 +40,35 @@ type
         Head, Tail: PProfilerNode;
 
         constructor Init;
-        function Stopwatch(TheTitle: String): PStopwatch;
+        function Stopwatch(TheTitle: string): PStopwatch;
         procedure Print;
-        procedure Write(Filename: String);
+        procedure Write(Filename: string);
     end;
 
 var
-   Profiler: PProfiler;
+    Profiler: PProfiler;
 
 function Timestamp: LongInt;
 
 implementation
 
-uses Dos, Drivers, VGA, ZenTimer, ModeX;
+uses
+    Dos,
+    Drivers,
+    VGA,
+    ZenTimer,
+    ModeX;
 
 constructor TProfiler.Init;
 begin
-     Head := nil;
-     Tail := nil;
+    Head := nil;
+    Tail := nil;
 end;
 
 function TProfiler.Stopwatch;
 var
-   Next: PProfilerNode;
-   Result: PStopwatch;
+    Next: PProfilerNode;
+    Result: PStopwatch;
 begin
     New(Result, Init(TheTitle));
 
@@ -73,7 +79,8 @@ begin
     if Head = nil then begin
         Head := Next;
         Tail := Next;
-    end else begin
+    end
+    else begin
         Tail^.Next := Next;
 
         Tail := Next;
@@ -84,102 +91,90 @@ end;
 
 procedure TProfiler.Print;
 begin
-     Write('');
+    Write('');
 end;
 
 procedure TProfiler.Write;
 var
-   Current: PProfilerNode;
-   Duration: LongInt;
-   F: Text;
+    Current: PProfilerNode;
+    Duration: LongInt;
+    F: Text;
 begin
-     Assign(F, Filename);
-     Rewrite(F);
+    Assign(F, Filename);
+    Rewrite(F);
 
-     Current := Head;
+    Current := Head;
 
-     while Current <> nil do begin
-           Duration := Current^.Stopwatch^.Duration;
+    while Current <> nil do begin
+        Duration := Current^.Stopwatch^.Duration;
 
-           WriteLn(
-               F,
-               Current^.Stopwatch^.Title,
-               ': ',
-               Duration div 1000,
-               '.',
-               Duration mod 1000,
-               'ms'
-           );
+        WriteLn(F, Current^.Stopwatch^.Title, ': ', Duration div 1000, '.', Duration mod 1000, 'ms');
 
+        Current := Current^.Next;
+    end;
 
-           Current := Current^.Next;
-     end;
-
-     Close(F);
+    Close(F);
 end;
 
 constructor TStopwatch.Init;
 begin
-     Title := TheTitle;
+    Title := TheTitle;
 end;
 
 procedure TStopwatch.Start;
 begin
-     LZTimerOn;
+    LZTimerOn;
 end;
 
 procedure TStopwatch.Stop;
 begin
-     Duration := LZTimerLap;
-     LZTimerOff;
+    Duration := LZTimerLap;
+    LZTimerOff;
 end;
 
 function Timestamp;
 var
-   Hour, Min, Sec, Sec100: Word;
+    Hour, Min, Sec, Sec100: Word;
 begin
-     GetTime(Hour, Min, Sec, Sec100);
+    GetTime(Hour, Min, Sec, Sec100);
 
-     Timestamp := LongInt(Hour) * 360000 +
-        LongInt(Min) * 6000 +
-        LongInt(Sec) * 100 +
-        LongInt(Sec100);
+    Timestamp := LongInt(Hour) * 360000 + LongInt(Min) * 6000 + LongInt(Sec) * 100 + LongInt(Sec100);
 end;
 
 constructor FpsInfo.Init;
 begin
-     inherited Init(0, 0, 65535, 48, 16);
+    inherited Init(0, 0, 65535, 48, 16);
 
-     SampleSize := TheSampleSize;
-     Frames := 0;
-     LastTs := Timestamp;
-     CurrentFps := 0;
+    SampleSize := TheSampleSize;
+    Frames := 0;
+    LastTs := Timestamp;
+    CurrentFps := 0;
 end;
 
 procedure FpsInfo.Update;
 var
-   NextTs: LongInt;
+    NextTs: LongInt;
 begin
-     Inc(Frames);
+    Inc(Frames);
 
-     if Frames < SampleSize then
+    if Frames < SampleSize then
         Exit;
 
-     NextTs := Timestamp;
+    NextTs := Timestamp;
 
-     CurrentFps := Frames / (NextTs - LastTs) * 100;
-     LastTs := NextTs;
-     Frames := 0;
+    CurrentFps := Frames / (NextTs - LastTs) * 100;
+    LastTs := NextTs;
+    Frames := 0;
 end;
 
 procedure FpsInfo.Draw(Page: Byte);
 var
-   S: String;
+    S: string;
 begin
-     Str(CurrentFps:0:3, S);
-     X_PutString(Page, X, Y, S);
+    Str(CurrentFps: 0: 3, S);
+    X_PutString(Page, X, Y, S);
 end;
 
 begin
-     New(Profiler, Init);
+    New(Profiler, Init);
 end.

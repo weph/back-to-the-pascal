@@ -9,93 +9,94 @@ uses
     Debug;
 
 var
-   ZBuffer: array[0..3] of Pointer;
+    ZBuffer: array[0..3] of Pointer;
 
 procedure InitZBuffer;
 var
-   i: Byte;
+    i: Byte;
 begin
-     for i := 0 to 3 do begin
-         M_Alloc(ZBuffer[i], PlaneWidth * LogicalScreenHeight);
-         FillChar(ZBuffer[i]^, PlaneWidth * LogicalScreenHeight, 0);
-     end;
+    for i := 0 to 3 do begin
+        M_Alloc(ZBuffer[i], PlaneWidth * LogicalScreenHeight);
+        FillChar(ZBuffer[i]^, PlaneWidth * LogicalScreenHeight, 0);
+    end;
 end;
 
 procedure FreeZBuffer;
 var
-   i: Byte;
+    i: Byte;
 begin
-     for i := 0 to 3 do begin
-         M_Free(ZBuffer[i], PlaneWidth * LogicalScreenHeight);
-     end;
+    for i := 0 to 3 do begin
+        M_Free(ZBuffer[i], PlaneWidth * LogicalScreenHeight);
+    end;
 end;
 
 procedure PutPixel(X, Y: Word; Z: Byte; Color: Byte);
 var
-   Plane: Byte;
-   Pos: Word;
+    Plane: Byte;
+    Pos: Word;
 begin
-     Plane := X mod 4;
+    Plane := X mod 4;
 
-     Pos := Y * PlaneWidth + (X div 4);
+    Pos := Y * PlaneWidth + (X div 4);
 
-     if Ord(PChar(ZBuffer[Plane])[Pos]) >= Z then Exit;
+    if Ord(PChar(ZBuffer[Plane])[Pos]) >= Z then
+        Exit;
 
-     PChar(ZBuffer[Plane])[Pos] := Chr(Z);
+    PChar(ZBuffer[Plane])[Pos] := Chr(Z);
 
-     X_PutPixel(0, X, Y, Color);
+    X_PutPixel(0, X, Y, Color);
 end;
 
 procedure DrawRect(X1, Y1, X2, Y2: Word; Z: Byte; Color: Byte);
 var
-   X, Y: Word;
+    X, Y: Word;
 begin
-     for Y := Y1 to Y2 do begin
-         for X := X1 to X2 do begin
-             PutPixel(X, Y, Z, Color);
-         end;
-     end;
+    for Y := Y1 to Y2 do begin
+        for X := X1 to X2 do begin
+            PutPixel(X, Y, Z, Color);
+        end;
+    end;
 end;
 
 procedure DrawAlpha(X, Y: Word; Z: Byte; Image: PImage);
 var
-   ImageData: Pointer;
-   Plane: Byte;
-   StartYOffset: Word;
-   LineOffset: Word;
-   EndOffset: Word;
-   Height: Byte;
-   Width: Word;
-   PlaneData: array[0..3] of Word;
-   PPlaneData: Pointer;
-   i: Byte;
-   PlaneShift: Byte;
-   PZBuffer: Pointer;
+    ImageData: Pointer;
+    Plane: Byte;
+    StartYOffset: Word;
+    LineOffset: Word;
+    EndOffset: Word;
+    Height: Byte;
+    Width: Word;
+    PlaneData: array[0..3] of Word;
+    PPlaneData: Pointer;
+    i: Byte;
+    PlaneShift: Byte;
+    PZBuffer: Pointer;
 begin
-     ImageData := Image^.Data;
-     EndOffset := Ofs(Image^.Data^) + Image^.MemSize;
-     LineOffset := PlaneWidth - (Image^.Width div 4);
-     Plane := 0;
-     StartYOffset := Y * PlaneWidth + X div 4;
-     Height := Image^.Height;
-     Width := Image^.Width shr 2;
+    ImageData := Image^.Data;
+    EndOffset := Ofs(Image^.Data^) + Image^.MemSize;
+    LineOffset := PlaneWidth - (Image^.Width div 4);
+    Plane := 0;
+    StartYOffset := Y * PlaneWidth + X div 4;
+    Height := Image^.Height;
+    Width := Image^.Width shr 2;
 
-     PlaneShift := X mod 4;
-     for i := 0 to 3 do begin
-         PlaneData[i] := (1 shl ((i + PlaneShift) mod 4) shl 8) or (Ord(i + PlaneShift > 3));
-     end;
+    PlaneShift := X mod 4;
+    for i := 0 to 3 do begin
+        PlaneData[i] := (1 shl ((i + PlaneShift) mod 4) shl 8) or (Ord(i + PlaneShift > 3));
+    end;
 
-     PPlaneData := @PlaneData;
-     PZBuffer := @ZBuffer;
+    PPlaneData := @PlaneData;
+    PZBuffer := @ZBuffer;
 
-     {
+    {
         ds:si image data
         es:di screen / z-buffer
         bh    plane counter
         bl    line counter
         dx    line width
      }
-     asm
+    asm
         push ds
 
         lds si, ImageData
@@ -219,49 +220,48 @@ begin
         jnz @DrawPlane
 
         pop ds
-     end;
+    end;
 end;
 
 procedure DrawAlpha2(X, Y: Word; Z: Byte; Image: PImage);
 var
-   ImageData: Pointer;
-   Plane: Byte;
-   StartYOffset: Word;
-   LineOffset: Word;
-   EndOffset: Word;
-   Height: Byte;
-   Width: Word;
-   PlaneData: array[0..3] of Word;
-   PPlaneData: Pointer;
-   i: Byte;
-   PlaneShift: Byte;
-   PZBuffer: Pointer;
+    ImageData: Pointer;
+    Plane: Byte;
+    StartYOffset: Word;
+    LineOffset: Word;
+    EndOffset: Word;
+    Height: Byte;
+    Width: Word;
+    PlaneData: array[0..3] of Word;
+    PPlaneData: Pointer;
+    i: Byte;
+    PlaneShift: Byte;
+    PZBuffer: Pointer;
 begin
-     ImageData := Image^.Data;
-     EndOffset := Ofs(Image^.Data^) + Image^.MemSize;
-     LineOffset := PlaneWidth - (Image^.Width div 4);
-     Plane := 0;
-     StartYOffset := Y * PlaneWidth + X div 4;
-     Height := Image^.Height;
-     Width := Image^.Width shr 2;
+    ImageData := Image^.Data;
+    EndOffset := Ofs(Image^.Data^) + Image^.MemSize;
+    LineOffset := PlaneWidth - (Image^.Width div 4);
+    Plane := 0;
+    StartYOffset := Y * PlaneWidth + X div 4;
+    Height := Image^.Height;
+    Width := Image^.Width shr 2;
 
+    PlaneShift := X mod 4;
+    for i := 0 to 3 do begin
+        PlaneData[i] := (1 shl ((i + PlaneShift) mod 4) shl 8) or (Ord(i + PlaneShift > 3));
+    end;
 
-     PlaneShift := X mod 4;
-     for i := 0 to 3 do begin
-         PlaneData[i] := (1 shl ((i + PlaneShift) mod 4) shl 8) or (Ord(i + PlaneShift > 3));
-     end;
+    PPlaneData := @PlaneData;
+    PZBuffer := @ZBuffer;
 
-     PPlaneData := @PlaneData;
-     PZBuffer := @ZBuffer;
-
-     {
+    {
         ds:si image data
         es:di screen
         bh    plane counter
         bl    row
         dx    ScIndex
      }
-     asm
+    asm
         push ds
 
         lds si, ImageData
@@ -379,82 +379,75 @@ begin
         jnz @DrawPlane
 
         pop ds
-     end;
+    end;
 end;
 
-
-
 var
-   Img: PCXImage;
-   Tile: PImage;
-   Player: PImage;
-   DirtyRect: PImage;
-   X, Y: Word;
-   FPS: FPSInfo;
-   SW: PStopwatch;
+    Img: PCXImage;
+    Tile: PImage;
+    Player: PImage;
+    DirtyRect: PImage;
+    X, Y: Word;
+    FPS: FPSInfo;
+    SW: PStopwatch;
 
 begin
-     FPS.Init(30);
-     InitZBuffer;
-     InitModeX;
-     SetScreenWidth(LogicalScreenWidth);
+    FPS.Init(30);
+    InitZBuffer;
+    InitModeX;
+    SetScreenWidth(LogicalScreenWidth);
 
-     Img.Init('assets\iso2.pcx');
-     Tile := Img.ImageAt(64, 0, 32, 24);
-     Img.Destroy;
+    Img.Init('assets\iso2.pcx');
+    Tile := Img.ImageAt(64, 0, 32, 24);
+    Img.Destroy;
 
-     Img.Init('assets\player.pcx');
-     Player := Img.ImageAt(0, 0, 32, 32);
-     Img.Destroy;
+    Img.Init('assets\player.pcx');
+    Player := Img.ImageAt(0, 0, 32, 32);
+    Img.Destroy;
 
-     New(DirtyRect, New(32, 32));
+    New(DirtyRect, New(32, 32));
 
-     SW := Profiler^.Stopwatch('Fill Screen');
-     SW^.Start;
-     for Y := 0 to 240 div 8 do begin
-         for X := 0 to 320 div 32 do begin
-             if Y mod 2 = 0 then
+    SW := Profiler^.Stopwatch('Fill Screen');
+    SW^.Start;
+    for Y := 0 to 240 div 8 do begin
+        for X := 0 to 320 div 32 do begin
+            if Y mod 2 = 0 then
                 DrawAlpha(X * 32, Y * 8, 50, Tile)
-             else
+            else
                 DrawAlpha(X * 32 + 16, Y * 8, 50, Tile);
-         end;
-     end;
-     SW^.Stop;
+        end;
+    end;
+    SW^.Stop;
 
-     DrawAlpha(128, 136, 150, Tile);
-     DrawAlpha(128, 128, 150, Tile);
-     DrawAlpha(128, 120, 150, Tile);
+    DrawAlpha(128, 136, 150, Tile);
+    DrawAlpha(128, 128, 150, Tile);
+    DrawAlpha(128, 120, 150, Tile);
 
-     X_CopyToSysMem(0, 99, 104, 32, 32, DirtyRect^.Data);
+    X_CopyToSysMem(0, 99, 104, 32, 32, DirtyRect^.Data);
 
-     Y := 110;
+    Y := 110;
 
-     for X := 0 to 288 do begin
-         FPS.Update(0, 0);
-         FPS.Draw(0);
+    for X := 0 to 288 do begin
+        FPS.Update(0, 0);
+        FPS.Draw(0);
 
-         X_CopyToSysMem(0, X, Y, 32, 32, DirtyRect^.Data);
+        X_CopyToSysMem(0, X, Y, 32, 32, DirtyRect^.Data);
 
-         DrawAlpha2(X, Y, 100, Player);
+        DrawAlpha2(X, Y, 100, Player);
 
-         WaitForVRetrace;
+        WaitForVRetrace;
 
-         X_DrawOpaque(
-             0,
-             X,
-             Y,
-             DirtyRect
-         );
+        X_DrawOpaque(0, X, Y, DirtyRect);
 
-     end;
+    end;
 
-     SetVideoMode(3);
-     FreeZBuffer;
-     Dispose(Tile, Destroy);
-     Dispose(Player, Destroy);
+    SetVideoMode(3);
+    FreeZBuffer;
+    Dispose(Tile, Destroy);
+    Dispose(Player, Destroy);
 
-     Profiler^.Print;
-     M_Debug;
+    Profiler^.Print;
+    M_Debug;
 
-     ReadLn;
+    ReadLn;
 end.

@@ -1,0 +1,4 @@
+line_ending = "crlf"
+tab_width = 4
+continuation_indents = 1
+wrap_column = 120

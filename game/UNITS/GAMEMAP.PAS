@@ -10,96 +10,98 @@ type
         Depth: Byte;
         NumTiles: Byte;
         Layers: array[0..255] of PChar;
-        Walkable: Array[0..255] of Boolean;
+        Walkable: array[0..255] of Boolean;
 
-        constructor Init(Filename: String);
+        constructor Init(Filename: string);
         destructor Destroy;
         function TileAt(X, Y, Z: Word): Byte;
         function IsWalkable(X, Y: Word): Boolean;
     end;
 
-
 implementation
 
-uses Malloc, VGA, Debug;
+uses
+    Malloc,
+    VGA,
+    Debug;
 
 constructor TGameMap.Init;
 var
-   MapFile: file;
-   Line: String;
-   i, X, Y, Z: Word;
-   LL: Word;
-   W: Byte;
-   Tile: Byte;
-   SW: PStopwatch;
+    MapFile: file;
+    Line: string;
+    i, X, Y, Z: Word;
+    LL: Word;
+    W: Byte;
+    Tile: Byte;
+    SW: PStopwatch;
 begin
-     SW := Profiler^.Stopwatch('TGameMap.Init');
-     SW^.Start;
+    SW := Profiler^.Stopwatch('TGameMap.Init');
+    SW^.Start;
 
-     Assign(MapFile, Filename);
-     Reset(MapFile, 1);
+    Assign(MapFile, Filename);
+    Reset(MapFile, 1);
 
-     BlockRead(MapFile, Width, 2);
-     BlockRead(MapFile, Height, 2);
-     BlockRead(MapFile, Depth, 1);
-     BlockRead(MapFile, NumTiles, 1);
+    BlockRead(MapFile, Width, 2);
+    BlockRead(MapFile, Height, 2);
+    BlockRead(MapFile, Depth, 1);
+    BlockRead(MapFile, NumTiles, 1);
 
-     LayerSize := Width * Height;
+    LayerSize := Width * Height;
 
-     for i := 0 to NumTiles - 1 do begin
-         BlockRead(MapFile, W, 1);
-         Walkable[i + 1] := W = 1;
-     end;
+    for i := 0 to NumTiles - 1 do begin
+        BlockRead(MapFile, W, 1);
+        Walkable[i + 1] := W = 1;
+    end;
 
-     for Z := 0 to Depth - 1 do begin
-         M_Alloc(Layers[Z], LayerSize);
-         BlockRead(MapFile, Layers[Z]^, LayerSize);
-     end;
+    for Z := 0 to Depth - 1 do begin
+        M_Alloc(Layers[Z], LayerSize);
+        BlockRead(MapFile, Layers[Z]^, LayerSize);
+    end;
 
-     Close(MapFile);
+    Close(MapFile);
 
-     SW^.Stop;
+    SW^.Stop;
 end;
 
 destructor TGameMap.Destroy;
 var
-   i: Byte;
+    i: Byte;
 begin
-     for i := 0 to Depth - 1 do begin
-         M_Free(Layers[i], LayerSize);
-     end;
+    for i := 0 to Depth - 1 do begin
+        M_Free(Layers[i], LayerSize);
+    end;
 end;
 
 function TGameMap.TileAt;
 var
-   Index: Word;
+    Index: Word;
 begin
-     if (X >= Width) or (Y >= Height) or (Z >= Depth) then begin
+    if (X >= Width) or (Y >= Height) or (Z >= Depth) then begin
         TileAt := 0;
         Exit;
-     end;
+    end;
 
-
-     TileAt := Byte(Layers[Z][Y * Width + X]);
+    TileAt := Byte(Layers[Z][Y * Width + X]);
 end;
 
 function TGameMap.IsWalkable;
 var
-   Z: Byte;
-   Tile: Byte;
+    Z: Byte;
+    Tile: Byte;
 begin
-     for Z := 0 to Depth - 1 do begin
-         Tile := Byte(Layers[Z][Y * Width + X]);
+    for Z := 0 to Depth - 1 do begin
+        Tile := Byte(Layers[Z][Y * Width + X]);
 
-         if Tile = 0 then continue;
+        if Tile = 0 then
+            continue;
 
-         if not Walkable[Tile] then begin
+        if not Walkable[Tile] then begin
             IsWalkable := false;
             Exit;
-         end;
-     end;
+        end;
+    end;
 
-     IsWalkable := true;
+    IsWalkable := true;
 end;
 
 end.

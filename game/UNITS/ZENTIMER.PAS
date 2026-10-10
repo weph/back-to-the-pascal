@@ -1,4 +1,4 @@
- {
+{
   Long Period Zen Timer v2.31 (IMPROOVED AND OPTIMIZED 32 BITS VERSION)
   From the book "Zen of Assembly Language" Volume 1, Knowledge
   by Michael Abrash
@@ -13,26 +13,26 @@
   in Real Mode and under DPMI16!
  }
 
- {$g+,n-,d-,l-,b-,r-,o+,f+,s-,a+,e-,p-,q-,t+,v-,x+,i-}
+{$G+,N-,D-,L-,B-,R-,O+,F+,S-,A+,E-,P-,Q-,T+,V-,X+,I-}
 
- unit ZenTimer;
+unit ZenTimer;
 
- interface
+interface
 
- procedure LZTimerOn;
- function  LZTimerLap: Longint;
- procedure LZTimerOff;
- function  LZTimerCount: Longint;
- procedure LZDelay(Value: LongInt);
+procedure LZTimerOn;
+function LZTimerLap: Longint;
+procedure LZTimerOff;
+function LZTimerCount: Longint;
+procedure LZDelay(Value: LongInt);
 
- implementation
+implementation
 
- var
-  StartBIOSCount,EndBIOSCount: Longint;
-  EndTimedCount: Word;
+var
+    StartBIOSCount, EndBIOSCount: Longint;
+    EndTimedCount: Word;
 
- procedure LZTimerOn; assembler;
-      asm
+procedure LZTimerOn; assembler;
+asm
         mov     al,$34
         out     $43,al
         db      $EB,$00,$EB,$00,$EB,$00
@@ -54,10 +54,10 @@
         out     $40,al
         db      $EB,$00,$EB,$00,$EB,$00
         out     $40,al
- end;
+end;
 
- procedure LZTimerOff; assembler;
-      asm
+procedure LZTimerOff; assembler;
+asm
         xor     al,al
         out     $43,al
         cli
@@ -74,10 +74,10 @@
         neg     ax
         mov     [EndTimedCount],ax
         sti
- end;
+end;
 
- function  LZTimerLap: Longint; assembler;
-      asm
+function LZTimerLap: Longint; assembler;
+asm
         xor     al,al
         out     $43,al
         cli
@@ -116,10 +116,10 @@
         add     ax,bx
         adc     cx,0
         mov     dx,cx
- end;
+end;
 
- function  LZTimerCount: Longint; assembler;
-      asm
+function LZTimerCount: Longint; assembler;
+asm
         db      $66
         mov     ax,word ptr [EndBIOSCount]
         db      $66
@@ -156,14 +156,15 @@
         add     ax,bx
         adc     cx,0
         mov     dx,cx
- end;
+end;
 
- procedure LZDelay(Value: LongInt);
- var CurValue: LongInt;
- begin
-  CurValue:=LZTimerLap+Value;
-  while LZTimerLap<CurValue do
- end;
+procedure LZDelay(Value: LongInt);
+var
+    CurValue: LongInt;
+begin
+    CurValue := LZTimerLap + Value;
+    while LZTimerLap < CurValue do
+end;
 
- begin
- end.
+begin
+end.

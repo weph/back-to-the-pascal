@@ -18,137 +18,142 @@ uses
     Iso;
 
 var
-   Frame: LongInt;
+    Frame: LongInt;
 
 procedure UpdateMapScroll(var Player: TPlayer; var MapOrigin: TCoordinate);
 var
-   MaxScrollX, MaxScrollY: Word;
+    MaxScrollX, MaxScrollY: Word;
 begin
-     MaxScrollX := (Map.Width * TileWidth) - 320 - 2 * TileWidth;
-     MaxScrollY := ((Map.Height div 2) * TileHeight) - 240 - 2 * TileHeight;
+    MaxScrollX := (Map.Width * TileWidth) - 320 - 2 * TileWidth;
+    MaxScrollY := ((Map.Height div 2) * TileHeight) - 240 - 2 * TileHeight;
 
-     if Player.MapX < 160 then
-         MapOrigin.X := 0
-     else if (Player.MapX - 160) > MaxScrollX then
-         MapOrigin.X := MaxScrollX
-     else
-         MapOrigin.X := Player.MapX - 160;
+    if Player.MapX < 160 then
+        MapOrigin.X := 0
+    else if (Player.MapX - 160) > MaxScrollX then
+        MapOrigin.X := MaxScrollX
+    else
+        MapOrigin.X := Player.MapX - 160;
 
-     if Player.MapY < 120 then
-         MapOrigin.Y := 0
-     else if (Player.MapY - 120) > MaxScrollY then
-         MapOrigin.Y := MaxScrollY
-     else
-         MapOrigin.Y := Player.MapY - 120;
+    if Player.MapY < 120 then
+        MapOrigin.Y := 0
+    else if (Player.MapY - 120) > MaxScrollY then
+        MapOrigin.Y := MaxScrollY
+    else
+        MapOrigin.Y := Player.MapY - 120;
 end;
 
 procedure MainLoop;
 var
-   Running: Boolean;
-   Page: Byte;
-   Player: TPlayer;
-   MapScroll: TCoordinate;
-   Break: Boolean;
-   MaxScrollX, MaxScrollY: Word;
-   PTileX, PTileY, PTileXE, PTileYE: Integer;
-   FPS: FPSInfo;
+    Running: Boolean;
+    Page: Byte;
+    Player: TPlayer;
+    MapScroll: TCoordinate;
+    Break: Boolean;
+    MaxScrollX, MaxScrollY: Word;
+    PTileX, PTileY, PTileXE, PTileYE: Integer;
+    FPS: FPSInfo;
 begin
-     FPS.Init(60);
+    FPS.Init(60);
 
-     Frame := 0;
-     Running := true;
-     Page := 0;
+    Frame := 0;
+    Running := true;
+    Page := 0;
 
-     MaxScrollX := (Map.Width * TileWidth) - 320 - TileWidth;
-     MaxScrollY := (Map.Height * TileHeight) - 240 - TileHeight;
+    MaxScrollX := (Map.Width * TileWidth) - 320 - TileWidth;
+    MaxScrollY := (Map.Height * TileHeight) - 240 - TileHeight;
 
-     Player.Init(@Map, 'assets\player.pcx');
-     Player.D := E;
-     Player.MapX := 64;
-     Player.MapY := 64;
+    Player.Init(@Map, 'assets\player.pcx');
+    Player.D := E;
+    Player.MapX := 64;
+    Player.MapY := 64;
 
-     UpdateMapScroll(Player, MapScroll);
+    UpdateMapScroll(Player, MapScroll);
 
-     X_Fill(0);
+    X_Fill(0);
 
-     R_AddSprite(@Player);
-     {R_AddSprite(@FPS);}
+    R_AddSprite(@Player);
+    {R_AddSprite(@FPS);}
 
-     R_InitScreen;
+    R_InitScreen;
 
-     SetVideoStartAddress(PageOffset[0] + ScreenOffset, 0);
+    SetVideoStartAddress(PageOffset[0] + ScreenOffset, 0);
 
-     Page := 0;
-     Break := false;
-     EnableKeyboardHandler;
-     while Running do begin
-           FPS.Update(Page, Frame);
-           Player.Update(Page, Frame);
-           UpdateMapScroll(Player, MapScroll);
+    Page := 0;
+    Break := false;
+    EnableKeyboardHandler;
+    while Running do begin
+        FPS.Update(Page, Frame);
+        Player.Update(Page, Frame);
+        UpdateMapScroll(Player, MapScroll);
 
-           Player.X := Player.MapX - (MapScroll.X div TileWidth) * TileWidth;
-           Player.Y := Player.MapY - (MapScroll.Y div TileHeight) * TileHeight;
+        Player.X := Player.MapX - (MapScroll.X div TileWidth) * TileWidth;
+        Player.Y := Player.MapY - (MapScroll.Y div TileHeight) * TileHeight;
 
-           FPS.X := MapScroll.X + 32;
-           FPS.Y := MapScroll.Y + 16;
+        FPS.X := MapScroll.X + 32;
+        FPS.Y := MapScroll.Y + 16;
 
-           R_Render(Page, MapScroll);
+        R_Render(Page, MapScroll);
 
-           SetVideoStartAddress(
-               PageOffset[Page] + ScreenOffset + (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2,
-               MapScroll.X
-           );
+        SetVideoStartAddress(
+            PageOffset[Page] + ScreenOffset + (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2,
+            MapScroll.X
+        );
 
-           Page := (Page + 1) and 1;
+        Page := (Page + 1) and 1;
 
-           if Keys[$10] then Running := False;
-           if Keys[$1e] then Player.Turn(Frame, -1);
-           if Keys[$20] then Player.Turn(Frame, 1);
-           if Keys[$19] then Player.Push;
-           if Keys[$39] then Player.Ollie;
+        if Keys[$10] then
+            Running := False;
+        if Keys[$1e] then
+            Player.Turn(Frame, -1);
+        if Keys[$20] then
+            Player.Turn(Frame, 1);
+        if Keys[$19] then
+            Player.Push;
+        if Keys[$39] then
+            Player.Ollie;
 
-           Inc(Frame);
-     end;
-     DisableKeyboardHandler;
+        Inc(Frame);
+    end;
+    DisableKeyboardHandler;
 
-     Player.Destroy;
+    Player.Destroy;
 end;
 
 var
-   MapRenderer: TIsometricMapRenderer;
+    MapRenderer: TIsometricMapRenderer;
 
 begin
-     InitModeX;
-     SetScreenWidth(LogicalScreenWidth);
-     X_InitZBuf;
-     X_Fill(0);
+    InitModeX;
+    SetScreenWidth(LogicalScreenWidth);
+    X_InitZBuf;
+    X_Fill(0);
 
-     Map.Init('assets\iso2.map');
-     MapRenderer.Init(@Map, 'assets\iso2.pcx');
-     R_Init(@MapRenderer);
+    Map.Init('assets\iso2.map');
+    MapRenderer.Init(@Map, 'assets\iso2.pcx');
+    R_Init(@MapRenderer);
 
-     MainLoop;
+    MainLoop;
 
-     SetVideoStartAddress(PageOffset[0] + ScreenOffset + 8, 0);
-     X_Fill(0);
-     {X_ClearZBufFirstCol(0);}
-     {X_ClearZBufFirstRow(0);}
-     {X_ClearZBufLastRow(0);}
-     X_DrawZBuf(0);
-     ReadLn;
+    SetVideoStartAddress(PageOffset[0] + ScreenOffset + 8, 0);
+    X_Fill(0);
+    {X_ClearZBufFirstCol(0);}
+    {X_ClearZBufFirstRow(0);}
+    {X_ClearZBufLastRow(0);}
+    X_DrawZBuf(0);
+    ReadLn;
 
-     {SetVideoStartAddress(PageOffset[1] + ScreenOffset + 8, 0);
+    {SetVideoStartAddress(PageOffset[1] + ScreenOffset + 8, 0);
      X_Fill(0);
      X_DrawZBuf(1);
      ReadLn;}
 
-     SetVideoMode(3);
+    SetVideoMode(3);
 
-     MapRenderer.Destroy;
-     Map.Destroy;
-     R_Destroy;
-     X_DestroyZBuf;
+    MapRenderer.Destroy;
+    Map.Destroy;
+    R_Destroy;
+    X_DestroyZBuf;
 
-     Profiler^.Print;
-     M_Debug;
+    Profiler^.Print;
+    M_Debug;
 end.

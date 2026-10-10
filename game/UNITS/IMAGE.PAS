@@ -1,110 +1,111 @@
 unit Image;
 
-
 interface
 
 type
     PImage = ^TImage;
     TImage = object
-        public
-            Width, Height: Word;
-            MemSize: Word;
-            Data: PChar;
-            TransparencyEncoded: Boolean;
+    public
+        Width, Height: Word;
+        MemSize: Word;
+        Data: PChar;
+        TransparencyEncoded: Boolean;
 
-            constructor Init(IWidth, IHeight: Word; IData: Pointer);
-            constructor New(IWidth, IHeight: Word);
-            destructor Destroy;
-            procedure Fill(Color: Byte);
+        constructor Init(IWidth, IHeight: Word; IData: Pointer);
+        constructor New(IWidth, IHeight: Word);
+        destructor Destroy;
+        procedure Fill(Color: Byte);
 
-        private
-            procedure Encode;
-            procedure OpaqueEncode;
-            procedure TransparencyEncode;
+    private
+        procedure Encode;
+        procedure OpaqueEncode;
+        procedure TransparencyEncode;
     end;
 
 implementation
 
-uses FMem, Malloc;
+uses
+    FMem,
+    Malloc;
 
 constructor TImage.Init;
 begin
-     Width := IWidth;
-     Height := IHeight;
-     Data := IData;
-     MemSize := Width * Height;
-     TransparencyEncoded := false;
-     Encode;
+    Width := IWidth;
+    Height := IHeight;
+    Data := IData;
+    MemSize := Width * Height;
+    TransparencyEncoded := false;
+    Encode;
 end;
 
 constructor TImage.New;
 begin
-     Width := IWidth;
-     Height := IHeight;
-     MemSize := Width * Height;
-     TransparencyEncoded := false;
-     M_Alloc(Data, MemSize);
-     Fill(0);
+    Width := IWidth;
+    Height := IHeight;
+    MemSize := Width * Height;
+    TransparencyEncoded := false;
+    M_Alloc(Data, MemSize);
+    Fill(0);
 end;
 
 destructor TImage.Destroy;
 begin
-     M_Free(Data, MemSize);
+    M_Free(Data, MemSize);
 end;
 
 procedure TImage.Fill(Color: Byte);
 begin
-     FillChar(Data^, MemSize, Color);
+    FillChar(Data^, MemSize, Color);
 end;
 
 procedure TImage.Encode;
 var
-   i: Word;
+    i: Word;
 begin
-     for i := 0 to MemSize - 1 do begin
-         if Ord(Data[i]) = 0 then begin
+    for i := 0 to MemSize - 1 do begin
+        if Ord(Data[i]) = 0 then begin
             TransparencyEncode;
             Exit;
-         end;
-     end;
+        end;
+    end;
 
-     OpaqueEncode;
+    OpaqueEncode;
 end;
 
 procedure TImage.OpaqueEncode;
 var
-   i, Pos, CurrentLength: Word;
-   Plane, X, Y, PrevY: Word;
-   TempSize: Word;
-   Temp: PChar;
-   Result: PImage;
+    i, Pos, CurrentLength: Word;
+    Plane, X, Y, PrevY: Word;
+    TempSize: Word;
+    Temp: PChar;
+    Result: PImage;
 begin
-     M_Alloc(Temp, MemSize);
+    M_Alloc(Temp, MemSize);
 
-     Pos := 0;
+    Pos := 0;
 
-     for Plane := 0 to 3 do begin
-         i := Plane;
+    for Plane := 0 to 3 do begin
+        i := Plane;
 
-         while i < Width * Height do begin
-             Temp[Pos] := PChar(Data)[i];
+        while i < Width * Height do begin
+            Temp[Pos] := PChar(Data)[i];
 
-             Inc(Pos);
-             Inc(i, 4);
-         end;
-     end;
+            Inc(Pos);
+            Inc(i, 4);
+        end;
+    end;
 
-     FastMove(Temp^, Data^, MemSize);
-     M_Free(Temp, MemSize);
+    FastMove(Temp^, Data^, MemSize);
+    M_Free(Temp, MemSize);
 end;
 
 procedure TImage.TransparencyEncode;
 var
-   Transparent: Boolean;
-   i, Pos, CurrentLength: Word;
-   Plane: Byte;
-   TempSize: Word;
-   Temp: PChar;
+    Transparent: Boolean;
+    i, Pos, CurrentLength: Word;
+    Plane: Byte;
+    TempSize: Word;
+    Temp: PChar;
 begin
     TempSize := Width * Height * 4;
     M_Alloc(Temp, TempSize);
@@ -133,12 +134,14 @@ begin
 
             if Transparent = (Ord(Data[i]) = 0) then begin
                 Inc(CurrentLength);
-            end else begin
+            end
+            else begin
                 if Transparent then begin
                     Temp[Pos] := Chr(0);
                     Temp[Pos + 1] := Chr(CurrentLength);
                     Inc(Pos, 2);
-                end else if CurrentLength > 0 then begin
+                end
+                else if CurrentLength > 0 then begin
                     Temp[Pos] := Chr(CurrentLength);
                     Inc(Pos, CurrentLength + 1);
                 end;
@@ -158,7 +161,8 @@ begin
             Temp[Pos] := Chr(0);
             Temp[Pos + 1] := Chr(0);
             Inc(Pos, 2);
-        end else begin
+        end
+        else begin
             Temp[Pos] := Chr(CurrentLength);
             Inc(Pos, CurrentLength + 1);
             Temp[Pos] := Chr(0);

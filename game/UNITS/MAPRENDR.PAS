@@ -13,27 +13,23 @@ uses
 type
     PMapRenderer = ^TMapRenderer;
     TMapRenderer = object
-        public
-            Map: PGameMap;
+    public
+        Map: PGameMap;
 
-            constructor Init(_Map: PGameMap);
-            procedure Update(Page: Byte; Scroll: TCoordinate);
-            procedure Draw(
-                Page: Byte;
-                Offset: TCoordinate;
-                Start: TCoordinate
-            );
-            procedure DrawPartialMap(
-                Page: Byte;
-                Offset: TCoordinate;
-                StartLayer, EndLayer: Byte;
-                StartCol, EndCol: Word;
-                StartRow, EndRow: Word;
-                Start: TCoordinate
-            ); virtual;
+        constructor Init(_Map: PGameMap);
+        procedure Update(Page: Byte; Scroll: TCoordinate);
+        procedure Draw(Page: Byte; Offset: TCoordinate; Start: TCoordinate);
+        procedure DrawPartialMap(
+            Page: Byte;
+            Offset: TCoordinate;
+            StartLayer, EndLayer: Byte;
+            StartCol, EndCol: Word;
+            StartRow, EndRow: Word;
+            Start: TCoordinate
+        ); virtual;
 
-        private
-            LastRedraw: array[0..1] of TCoordinate;
+    private
+        LastRedraw: array[0..1] of TCoordinate;
     end;
 
 implementation
@@ -45,22 +41,22 @@ uses
     Debug;
 
 const
-     MapCols = LogicalScreenWidth div TileWidth;
-     MapRows = LogicalScreenHeight div TileHeight;
+    MapCols = LogicalScreenWidth div TileWidth;
+    MapRows = LogicalScreenHeight div TileHeight;
 
 var
-   TilePositions: array[0..MapRows-1,0..MapCols-1] of TCoordinate;
+    TilePositions: array[0..MapRows - 1, 0..MapCols - 1] of TCoordinate;
 
 constructor TMapRenderer.Init(_Map: PGameMap);
 var
-   Page: Byte;
+    Page: Byte;
 begin
-     Map := _Map;
+    Map := _Map;
 
-     for Page := 0 to 1 do begin
-         LastRedraw[Page].X := -1;
-         LastRedraw[Page].Y := -1;
-     end;
+    for Page := 0 to 1 do begin
+        LastRedraw[Page].X := -1;
+        LastRedraw[Page].Y := -1;
+    end;
 end;
 
 procedure TMapRenderer.DrawPartialMap(
@@ -72,90 +68,53 @@ procedure TMapRenderer.DrawPartialMap(
     Start: TCoordinate
 );
 begin
-     RunError;
+    RunError;
 end;
 
-procedure TMapRenderer.Draw(
-    Page: Byte;
-    Offset: TCoordinate;
-    Start: TCoordinate
-);
+procedure TMapRenderer.Draw(Page: Byte; Offset: TCoordinate; Start: TCoordinate);
 begin
-     DrawPartialMap(
-         Page,
-         Offset,
-         0, Map^.Depth - 1,
-         0, MapCols - 1,
-         0, MapRows - 1,
-         Start
-     );
-     LastRedraw[Page] := Start;
+    DrawPartialMap(Page, Offset, 0, Map^.Depth - 1, 0, MapCols - 1, 0, MapRows - 1, Start);
+    LastRedraw[Page] := Start;
 
-     X_SetScrollOffset(Page, Start);
+    X_SetScrollOffset(Page, Start);
 end;
 
 procedure TMapRenderer.Update(Page: Byte; Scroll: TCoordinate);
 var
-   NextRedraw: TCoordinate;
-   MapRedrawStart: TCoordinate;
-   S: String;
+    NextRedraw: TCoordinate;
+    MapRedrawStart: TCoordinate;
+    S: string;
 begin
-     NextRedraw.X := Scroll.X div TileWidth;
-     NextRedraw.Y := Scroll.Y div TileHeight;
-     MapRedrawStart.X := NextRedraw.X * TileWidth;
-     MapRedrawStart.Y := NextRedraw.Y * TileHeight;
+    NextRedraw.X := Scroll.X div TileWidth;
+    NextRedraw.Y := Scroll.Y div TileHeight;
+    MapRedrawStart.X := NextRedraw.X * TileWidth;
+    MapRedrawStart.Y := NextRedraw.Y * TileHeight;
 
-     X_SetScrollOffset(Page, MapRedrawStart);
+    X_SetScrollOffset(Page, MapRedrawStart);
 
-     if NextRedraw.X > LastRedraw[Page].X then begin
-         X_ClearZBufLastCol(Page);
+    if NextRedraw.X > LastRedraw[Page].X then begin
+        X_ClearZBufLastCol(Page);
 
-         DrawPartialMap(
-             Page,
-             NextRedraw,
-             0, Map^.Depth - 1,
-             MapCols - 1, MapCols - 1,
-             0, MapRows - 1,
-             MapRedrawStart
-         );
-     end else if NextRedraw.X < LastRedraw[Page].X then begin
-         X_ClearZBufFirstCol(Page);
+        DrawPartialMap(Page, NextRedraw, 0, Map^.Depth - 1, MapCols - 1, MapCols - 1, 0, MapRows - 1, MapRedrawStart);
+    end
+    else if NextRedraw.X < LastRedraw[Page].X then begin
+        X_ClearZBufFirstCol(Page);
 
-         DrawPartialMap(
-             Page,
-             NextRedraw,
-             0, Map^.Depth - 1,
-             0, 0,
-             0, MapRows - 1,
-             MapRedrawStart
-         );
-     end;
+        DrawPartialMap(Page, NextRedraw, 0, Map^.Depth - 1, 0, 0, 0, MapRows - 1, MapRedrawStart);
+    end;
 
-     if NextRedraw.Y > LastRedraw[Page].Y then begin
-         X_CLearZBufLastRow(Page);
+    if NextRedraw.Y > LastRedraw[Page].Y then begin
+        X_CLearZBufLastRow(Page);
 
-         DrawPartialMap(
-             Page,
-             NextRedraw,
-             0, Map^.Depth - 1,
-             0, MapCols - 1,
-             MapRows - 1, MapRows - 1,
-             MapRedrawStart
-         );
-     end else if NextRedraw.Y < LastRedraw[Page].Y then begin
-         X_CLearZBufFirstRow(Page);
+        DrawPartialMap(Page, NextRedraw, 0, Map^.Depth - 1, 0, MapCols - 1, MapRows - 1, MapRows - 1, MapRedrawStart);
+    end
+    else if NextRedraw.Y < LastRedraw[Page].Y then begin
+        X_CLearZBufFirstRow(Page);
 
-         DrawPartialMap(
-             Page,
-             NextRedraw,
-             0, Map^.Depth - 1,
-             0, MapCols - 1,
-             0, 0,
-             MapRedrawStart
-         );
-     end;
+        DrawPartialMap(Page, NextRedraw, 0, Map^.Depth - 1, 0, MapCols - 1, 0, 0, MapRedrawStart);
+    end;
 
-     LastRedraw[Page] := NextRedraw;
+    LastRedraw[Page] := NextRedraw;
 end;
 
 end.

@@ -1,18 +1,20 @@
 program KeysDemo;
 
-uses Crt, Keyboard;
+uses
+    Crt,
+    Keyboard;
 
 var
-   i, j: LongInt;
+    i, j: LongInt;
 
 begin
-     for i := 0 to 10000 do begin
-         ClrScr;
+    for i := 0 to 10000 do begin
+        ClrScr;
 
-         for j := 1 to 127 do begin
-             if Keys[j] then begin
+        for j := 1 to 127 do begin
+            if Keys[j] then begin
                 Writeln(j);
-             end;
-         end;
-     end;
+            end;
+        end;
+    end;
 end.

@@ -8,7 +8,7 @@ implementation
 
 procedure FastMove;
 begin
-     asm
+    asm
         push ds
         lds si, Src
         les di, Dst
@@ -22,7 +22,7 @@ begin
         and cl, 3
         rep movsb
         pop ds
-     end;
+    end;
 end;
 
 end.

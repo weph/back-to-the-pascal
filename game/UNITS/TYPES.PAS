@@ -2,7 +2,8 @@ unit Types;
 
 interface
 
-uses Image;
+uses
+    Image;
 
 type
     TDirection = (N, NE, E, SE, S, SW, W, NW);

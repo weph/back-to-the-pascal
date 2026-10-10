@@ -2,7 +2,8 @@ unit Sprite;
 
 interface
 
-uses Types;
+uses
+    Types;
 
 type
     PSprite = ^TSprite;
@@ -19,22 +20,22 @@ implementation
 
 constructor TSprite.Init(_X, _Y, _Z: Word; _Width, _Height: Byte);
 begin
-     X := _X;
-     Y := _Y;
-     Z := _Z;
+    X := _X;
+    Y := _Y;
+    Z := _Z;
 
-     Width := _Width;
-     Height := _Height;
+    Width := _Width;
+    Height := _Height;
 end;
 
 procedure TSprite.Update(Page: Byte; Frame: LongInt);
 begin
-     Halt(1);
+    Halt(1);
 end;
 
 procedure TSprite.Draw(Page: Byte);
 begin
-     Halt(1);
+    Halt(1);
 end;
 
 end.
