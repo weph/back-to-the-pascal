@@ -98,9 +98,7 @@ procedure TMapRenderer.Update(Page: Byte; Scroll: TCoordinate);
 var
    NextRedraw: TCoordinate;
    MapRedrawStart: TCoordinate;
-   SW: PStopwatch;
    S: String;
-   Vals: array[0..1] of LongInt;
 begin
      NextRedraw.X := Scroll.X div TileWidth;
      NextRedraw.Y := Scroll.Y div TileHeight;
@@ -112,12 +110,6 @@ begin
      if NextRedraw.X > LastRedraw[Page].X then begin
          X_ClearZBufLastCol(Page);
 
-         Vals[0] := Page;
-         Vals[1] := NextRedraw.X;
-         FormatStr(S, 'Draw last %d/%d', Vals);
-         SW := Profiler^.Stopwatch(S);
-         SW^.Start;
-
          DrawPartialMap(
              Page,
              NextRedraw,
@@ -126,8 +118,6 @@ begin
              0, MapRows - 1,
              MapRedrawStart
          );
-
-         SW^.Stop;
      end else if NextRedraw.X < LastRedraw[Page].X then begin
          X_ClearZBufFirstCol(Page);
 

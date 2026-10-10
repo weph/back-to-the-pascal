@@ -8,7 +8,8 @@ uses
     MapRendr,
     Image,
     GameMap,
-    Sprite;
+    Sprite,
+    Debug;
 
 type
     TTile = record
@@ -110,11 +111,16 @@ var
    SX, SY: LongInt;
    TileTop, TileLeft, TileRight, TileBottom: Byte;
    Z: Byte;
+   SW: PStopwatch;
 begin
      {StartLayer := 1;}
      {EndLayer := 0;}
 
      if (StartRow = 0) and (EndRow = 0) then begin
+        SW := Profiler^.Stopwatch('DrawPartialMap');
+        SW^.Start;
+
+
         for Layer := EndLayer downto StartLayer do begin
             Row := (Layer + 1) div 2;
              for Col := StartCol to EndCol do begin
@@ -177,8 +183,12 @@ begin
              end;
          end;
 
+         SW^.Stop;
          Exit;
      end;
+
+     SW := Profiler^.Stopwatch('DrawPartialMap');
+     SW^.Start;
 
      for Layer := EndLayer downto StartLayer do begin
          for Row := StartRow to EndRow do begin
@@ -242,6 +252,8 @@ begin
              end;
          end;
      end;
+
+     SW^.Stop;
 
      {for Col := StartCol to EndCol do begin
          for Row := StartRow to EndRow do begin

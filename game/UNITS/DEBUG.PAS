@@ -41,6 +41,7 @@ type
         constructor Init;
         function Stopwatch(TheTitle: String): PStopwatch;
         procedure Print;
+        procedure Write(Filename: String);
     end;
 
 var
@@ -82,16 +83,26 @@ begin
 end;
 
 procedure TProfiler.Print;
+begin
+     Write('');
+end;
+
+procedure TProfiler.Write;
 var
    Current: PProfilerNode;
    Duration: LongInt;
+   F: Text;
 begin
+     Assign(F, Filename);
+     Rewrite(F);
+
      Current := Head;
 
      while Current <> nil do begin
            Duration := Current^.Stopwatch^.Duration;
 
            WriteLn(
+               F,
                Current^.Stopwatch^.Title,
                ': ',
                Duration div 1000,
@@ -103,6 +114,8 @@ begin
 
            Current := Current^.Next;
      end;
+
+     Close(F);
 end;
 
 constructor TStopwatch.Init;

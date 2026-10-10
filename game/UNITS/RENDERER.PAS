@@ -66,10 +66,12 @@ procedure FreeDirtyRects;
 var
    Page, Sprite: Byte;
 begin
-     for Page := 0 to 1 do begin
-         for Sprite := 0 to NumSprites - 1 do begin
-             Dispose(DirtyRects[Page][Sprite].Image, Destroy);
-         end;
+     if NumSprites > 0 then begin
+        for Page := 0 to 1 do begin
+            for Sprite := 0 to NumSprites - 1 do begin
+                Dispose(DirtyRects[Page][Sprite].Image, Destroy);
+            end;
+        end;
      end;
 end;
 
@@ -92,10 +94,12 @@ begin
      for Page := 0 to 1 do begin
          MapRenderer^.Draw(Page, Offset, Scroll);
 
-         for Sprite := 0 to NumSprites - 1 do begin
-             with Sprites[Sprite]^ do begin
-                  SaveDirtyRect(Page, X, Y, DirtyRects[Page][Sprite]);
-             end;
+         if NumSprites > 0 then begin
+            for Sprite := 0 to NumSprites - 1 do begin
+                with Sprites[Sprite]^ do begin
+                     SaveDirtyRect(Page, X, Y, DirtyRects[Page][Sprite]);
+                end;
+            end;
          end;
      end;
 end;
@@ -105,22 +109,26 @@ var
    Sprite: Byte;
    DRY: Word;
 begin
-     for Sprite := 0 to NumSprites - 1 do begin
-         DrawDirtyRect(Page, DirtyRects[Page][Sprite]);
+     if NumSprites > 0 then begin
+        for Sprite := 0 to NumSprites - 1 do begin
+            DrawDirtyRect(Page, DirtyRects[Page][Sprite]);
+        end;
      end;
 
      MapRenderer^.Update(Page, Scroll);
 
-     for Sprite := 0 to NumSprites - 1 do begin
-         with Sprites[Sprite]^ do begin
-              if Z = 65535 then DRY := Y else DRY := Y - Z;
+     if NumSprites > 0 then begin
+        for Sprite := 0 to NumSprites - 1 do begin
+            with Sprites[Sprite]^ do begin
+                 if Z = 65535 then DRY := Y else DRY := Y - Z;
 
-              SaveDirtyRect(Page, X, DRY, DirtyRects[Page][Sprite]);
-         end;
-     end;
+                 SaveDirtyRect(Page, X, DRY, DirtyRects[Page][Sprite]);
+            end;
+        end;
 
-     for Sprite := 0 to NumSprites - 1 do begin
-         Sprites[Sprite]^.Draw(Page);
+        for Sprite := 0 to NumSprites - 1 do begin
+            Sprites[Sprite]^.Draw(Page);
+        end;
      end;
 end;
 
