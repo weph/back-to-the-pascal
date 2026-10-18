@@ -1,3 +1,4 @@
+{$L MODEX.OBJ}
 unit ModeX;
 
 interface
@@ -103,43 +104,9 @@ begin
     end;
 end;
 
-procedure X_ClearZBufFirstCol(Page: Byte);
-var
-    Plane: Byte;
-    Y: Word;
-    PSeg, POfs: Word;
-begin
-    for Plane := 0 to 3 do begin
-        PSeg := Seg(ZBuffer[Page][Plane]^);
-        POfs := Ofs(ZBuffer[Page][Plane]^);
+procedure X_ClearZBufFirstCol(Page: Byte); external;
 
-        for Y := 0 to LogicalScreenHeight - 1 do begin
-            Move(Ptr(PSeg, POfs + Y * PlaneWidth)^, Ptr(PSeg, POfs + Y * PlaneWidth + 8)^, PlaneWidth - 8);
-
-            FillChar(Ptr(PSeg, POfs + Y * PlaneWidth)^, 8, 0);
-        end;
-    end;
-end;
-
-procedure X_ClearZBufLastCol(Page: Byte);
-var
-    Plane: Byte;
-    Y: Word;
-    PSeg, POfs: Word;
-begin
-    for Plane := 0 to 3 do begin
-        PSeg := Seg(ZBuffer[Page][Plane]^);
-        POfs := Ofs(ZBuffer[Page][Plane]^);
-
-        for Y := 0 to LogicalScreenHeight - 1 do begin
-            Move(Ptr(PSeg, POfs + 8)^, Ptr(PSeg, POfs)^, PlaneWidth - 8);
-
-            FillChar(Ptr(PSeg, POfs + PlaneWidth - 8)^, 8, 0);
-
-            Inc(POfs, PlaneWidth);
-        end;
-    end;
-end;
+procedure X_ClearZBufLastCol(Page: Byte); external;
 
 procedure X_ClearZBufFirstRow(Page: Byte);
 var

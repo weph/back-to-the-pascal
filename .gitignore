@@ -1,3 +1,5 @@
+node_modules
+game/build/*
 *.BAK
 *.TPU
 *.EXE
