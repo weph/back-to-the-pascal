@@ -30,10 +30,9 @@ var
     MapFile: file;
     i, Z: Word;
     W: Byte;
-    SW: PStopwatch;
+    SW: TStopwatch;
 begin
-    SW := Profiler^.Stopwatch('TGameMap.Init');
-    SW^.Start;
+    SW.Init('TGameMap.Init');
 
     Assign(MapFile, Filename);
     Reset(MapFile, 1);
@@ -57,7 +56,7 @@ begin
 
     Close(MapFile);
 
-    SW^.Stop;
+    SW.Stop;
 end;
 
 destructor TGameMap.Destroy;

@@ -389,7 +389,7 @@ var
     DirtyRect: PImage;
     X, Y: Word;
     FPS: FPSInfo;
-    SW: PStopwatch;
+    SW: TStopwatch;
 
 begin
     FPS.Init(30);
@@ -407,8 +407,7 @@ begin
 
     New(DirtyRect, New(32, 32));
 
-    SW := Profiler^.Stopwatch('Fill Screen');
-    SW^.Start;
+    SW.Init('Fill Screen');
     for Y := 0 to 240 div 8 do begin
         for X := 0 to 320 div 32 do begin
             if Y mod 2 = 0 then
@@ -417,7 +416,7 @@ begin
                 DrawAlpha(X * 32 + 16, Y * 8, 50, Tile);
         end;
     end;
-    SW^.Stop;
+    SW.Stop;
 
     DrawAlpha(128, 136, 150, Tile);
     DrawAlpha(128, 128, 150, Tile);
@@ -446,7 +445,7 @@ begin
     Dispose(Tile, Destroy);
     Dispose(Player, Destroy);
 
-    Profiler^.Print;
+    PrintProfile;
     M_Debug;
 
     ReadLn;

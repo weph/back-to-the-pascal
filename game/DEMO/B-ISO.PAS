@@ -17,9 +17,6 @@ const
     Rows = LogicalScreenHeight div 8;
     Iterations = 5;
 
-var
-    Profiler: TProfiler;
-
 procedure FillScreen(Draw: TDrawFunc; Tile: PImage);
 var
     Row, Col: Word;
@@ -37,7 +34,7 @@ end;
 procedure RunBenchmark(Title: string; Draw: TDrawFunc; Tile: PImage);
 var
     i: Byte;
-    Stopwatch: PStopwatch;
+    Stopwatch: TStopwatch;
     Num: string;
 begin
     for i := 0 to Iterations - 1 do begin
@@ -45,12 +42,11 @@ begin
 
         Str(i, Num);
 
-        Stopwatch := Profiler.Stopwatch(Title + ' #' + Num);
-        Stopwatch^.Start;
+        Stopwatch.Init(Title + ' #' + Num);
 
         FillScreen(Draw, Tile);
 
-        Stopwatch^.Stop;
+        Stopwatch.Stop;
     end;
 
     ReadLn;
@@ -61,8 +57,6 @@ var
     TileOpaque, TileAlpha: PImage;
 
 begin
-    Profiler.Init;
-
     InitModeX;
     SetScreenWidth(LogicalScreenWidth);
     SetVideoStartAddress(0, 0);
@@ -75,7 +69,7 @@ begin
 
     SetVideoMode(3);
 
-    Profiler.Print;
+    PrintProfile;
 
     ReadLn;
 end.

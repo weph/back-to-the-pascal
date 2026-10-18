@@ -165,13 +165,9 @@ procedure X_ClearZBufLastRow(Page: Byte);
 var
     Plane: Byte;
     PSeg, POfs: Word;
-    SW: PStopwatch;
     RowSize: Word;
     Offset: Word;
 begin
-    SW := Profiler^.Stopwatch('ClearZBufLastRow');
-    SW^.Start;
-
     RowSize := PlaneWidth * 16;
     Offset := (PlaneWidth * LogicalScreenHeight) - RowSize;
 
@@ -183,7 +179,6 @@ begin
 
         FillChar(Ptr(PSeg, POfs + Offset)^, RowSize, 0);
     end;
-    SW^.Stop;
 end;
 
 procedure X_DrawZBuf(Page: Byte);

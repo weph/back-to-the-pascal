@@ -110,11 +110,10 @@ var
     SX, SY: LongInt;
     TileTop, TileLeft, TileRight, TileBottom: Byte;
     Z: Byte;
-    SW: PStopwatch;
+    SW: TStopwatch;
 begin
     if (StartRow = 0) and (EndRow = 0) then begin
-        SW := Profiler^.Stopwatch('DrawPartialMap');
-        SW^.Start;
+        SW.Init('DrawPartialMap');
 
         for Layer := EndLayer downto StartLayer do begin
             Row := (Layer + 1) div 2;
@@ -156,12 +155,11 @@ begin
             end;
         end;
 
-        SW^.Stop;
+        SW.Stop;
         Exit;
     end;
 
-    SW := Profiler^.Stopwatch('DrawPartialMap');
-    SW^.Start;
+    SW.Init('DrawPartialMap');
 
     for Layer := EndLayer downto StartLayer do begin
         for Row := StartRow to EndRow do begin
@@ -204,7 +202,7 @@ begin
         end;
     end;
 
-    SW^.Stop;
+    SW.Stop;
 end;
 
 procedure InitTilePositions;

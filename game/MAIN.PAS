@@ -51,6 +51,7 @@ var
     Break: Boolean;
     MaxScrollX, MaxScrollY: Word;
     FPS: FPSInfo;
+    SWFrame, SWSub: TStopwatch;
 begin
     FPS.Init(60);
 
@@ -81,6 +82,9 @@ begin
     Break := false;
     EnableKeyboardHandler;
     while Running do begin
+        SWFrame.Init('Frame');
+        SWFrame.LogStart;
+
         FPS.Update(Page, Frame);
         Player.Update(Page, Frame);
         UpdateMapScroll(Player, MapScroll);
@@ -93,10 +97,12 @@ begin
 
         R_Render(Page, MapScroll);
 
+        SWSub.Init('SetVideoStartAddress');
         SetVideoStartAddress(
             PageOffset[Page] + ScreenOffset + (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2,
             MapScroll.X
         );
+        SWSub.Stop;
 
         Page := (Page + 1) and 1;
 
@@ -112,6 +118,8 @@ begin
             Player.Ollie;
 
         Inc(Frame);
+
+        SWFrame.Stop;
     end;
     DisableKeyboardHandler;
 
@@ -153,6 +161,5 @@ begin
     R_Destroy;
     X_DestroyZBuf;
 
-    Profiler^.Print;
     M_Debug;
 end.

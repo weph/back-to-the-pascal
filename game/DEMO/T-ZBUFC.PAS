@@ -17,7 +17,7 @@ end;
 procedure TestFirstColumn(Page: Byte);
 var
     X, Y: Word;
-    Stopwatch: PStopwatch;
+    Stopwatch: TStopwatch;
 begin
     for Y := 0 to LogicalScreenHeight - 1 do begin
         for X := 0 to LogicalScreenWidth - 1 do begin
@@ -29,10 +29,9 @@ begin
 
     ReadLn;
 
-    Stopwatch := Profiler^.Stopwatch('X_ClearZBufFirstCol');
-    Stopwatch^.Start;
+    Stopwatch.Init('X_ClearZBufFirstCol');
     X_ClearZBufFirstCol(Page);
-    Stopwatch^.Stop;
+    Stopwatch.Stop;
 
     X_DrawZBuf(Page);
 
@@ -46,7 +45,7 @@ end;
 procedure TestLastColumn(Page: Byte);
 var
     X, Y: Word;
-    Stopwatch: PStopwatch;
+    Stopwatch: TStopwatch;
 begin
     for Y := 0 to LogicalScreenHeight - 1 do begin
         for X := 0 to LogicalScreenWidth - 1 do begin
@@ -58,10 +57,9 @@ begin
 
     ReadLn;
 
-    Stopwatch := Profiler^.Stopwatch('X_ClearZBufLastCol');
-    Stopwatch^.Start;
+    Stopwatch.Init('X_ClearZBufLastCol');
     X_ClearZBufLastCol(Page);
-    Stopwatch^.Stop;
+    Stopwatch.Stop;
 
     X_DrawZBuf(Page);
 
@@ -75,7 +73,7 @@ end;
 procedure TestFirstRow(Page: Byte);
 var
     X, Y: Word;
-    Stopwatch: PStopwatch;
+    Stopwatch: TStopwatch;
 begin
     for Y := 0 to LogicalScreenHeight - 1 do begin
         for X := 0 to LogicalScreenWidth - 1 do begin
@@ -87,10 +85,9 @@ begin
 
     ReadLn;
 
-    Stopwatch := Profiler^.Stopwatch('X_ClearZBufFirstRow');
-    Stopwatch^.Start;
+    Stopwatch.Init('X_ClearZBufFirstRow');
     X_ClearZBufFirstRow(Page);
-    Stopwatch^.Stop;
+    Stopwatch.Stop;
 
     X_DrawZBuf(Page);
 
@@ -104,7 +101,7 @@ end;
 procedure TestLastRow(Page: Byte);
 var
     X, Y: Word;
-    Stopwatch: PStopwatch;
+    Stopwatch: TStopwatch;
 begin
     for Y := 0 to LogicalScreenHeight - 1 do begin
         for X := 0 to LogicalScreenWidth - 1 do begin
@@ -116,10 +113,9 @@ begin
 
     ReadLn;
 
-    Stopwatch := Profiler^.Stopwatch('X_ClearZBufLastRow');
-    Stopwatch^.Start;
+    Stopwatch.Init('X_ClearZBufLastRow');
     X_ClearZBufLastRow(Page);
-    Stopwatch^.Stop;
+    Stopwatch.Stop;
 
     X_DrawZBuf(Page);
 
@@ -157,7 +153,7 @@ begin
 
     SetVideoMode(3);
 
-    Profiler^.Print;
+    PrintProfile;
 
     ReadLn;
 end.

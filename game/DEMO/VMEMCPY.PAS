@@ -8,14 +8,13 @@ uses
 
 procedure ProfileCopy(Title: string; Image: PImage);
 var
-    SW: PStopwatch;
+    SW: TStopwatch;
 begin
-    SW := Profiler^.Stopwatch(Title);
-    SW^.Start;
+    SW.Init(Title);
 
     X_CopyToSysMem(0, 0, 0, Image^.Width, Image^.Height, Image^.Data);
 
-    SW^.Stop;
+    SW.Stop;
 end;
 
 var
@@ -70,7 +69,7 @@ begin
     ReadLn;
     SetVideoMode(3);
 
-    Profiler^.Print;
+    PrintProfile;
 
     ReadLn;
 

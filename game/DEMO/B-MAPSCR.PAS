@@ -13,6 +13,7 @@ var
     MapRenderer: TIsometricMapRenderer;
     Page: Byte;
     MaxScrollX: Word;
+    SW1, SW2: TStopwatch;
 
 begin
     InitModeX;
@@ -36,19 +37,24 @@ begin
     R_InitScreen;
 
     while MapScroll.X < MaxScrollX do begin
+        SW1.Init('Frame');
+        SW1.LogStart;
+
         Inc(MapScroll.X);
 
         R_Render(Page, MapScroll);
 
+        SW2.Init('SetVideoStartAddress');
         SetVideoStartAddress(
             PageOffset[Page] + ScreenOffset + (MapScroll.Y * PlaneWidth) + MapScroll.X shr 2,
             MapScroll.X
         );
+        SW2.Stop;
 
         Page := (Page + 1) and 1;
+
+        SW1.Stop;
     end;
 
     SetVideoMode(3);
-
-    Profiler^.Write('B-MAPSCR.TXT');
 end.

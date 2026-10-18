@@ -20,6 +20,7 @@ procedure R_Destroy;
 implementation
 
 uses
+    Debug,
     Globals,
     ModeX,
     Image,
@@ -104,16 +105,23 @@ procedure R_Render(Page: Byte; Scroll: TCoordinate);
 var
     Sprite: Byte;
     DRY: Word;
+    SW, SWSub: TStopwatch;
 begin
+    SW.Init('R_Render');
+    SW.LogStart;
+
     if NumSprites > 0 then begin
+        SWSub.Init('DrawDirtyRects');
         for Sprite := 0 to NumSprites - 1 do begin
             DrawDirtyRect(Page, DirtyRects[Page][Sprite]);
         end;
+        SWSub.Stop;
     end;
 
     MapRenderer^.Update(Page, Scroll);
 
     if NumSprites > 0 then begin
+        SWSub.Init('SaveDirtyRects');
         for Sprite := 0 to NumSprites - 1 do begin
             with Sprites[Sprite]^ do begin
                 if Z = 65535 then
@@ -124,11 +132,16 @@ begin
                 SaveDirtyRect(Page, X, DRY, DirtyRects[Page][Sprite]);
             end;
         end;
+        SWSub.Stop;
 
+        SWSub.Init('Draw Sprites');
         for Sprite := 0 to NumSprites - 1 do begin
             Sprites[Sprite]^.Draw(Page);
         end;
+        SWSub.Stop;
     end;
+
+    SW.Stop;
 end;
 
 procedure R_Destroy;

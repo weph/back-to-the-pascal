@@ -76,7 +76,11 @@ procedure TMapRenderer.Update(Page: Byte; Scroll: TCoordinate);
 var
     NextRedraw: TCoordinate;
     MapRedrawStart: TCoordinate;
+    SW, SWSub: TStopwatch;
 begin
+    SW.Init('TMapRenderer.Update');
+    SW.LogStart;
+
     NextRedraw.X := Scroll.X div TileWidth;
     NextRedraw.Y := Scroll.Y div TileHeight;
     MapRedrawStart.X := NextRedraw.X * TileWidth;
@@ -85,28 +89,38 @@ begin
     X_SetScrollOffset(Page, MapRedrawStart);
 
     if NextRedraw.X > LastRedraw[Page].X then begin
+        SWSub.Init('X_ClearZBufLastCol');
         X_ClearZBufLastCol(Page);
+        SWSub.Stop;
 
         DrawPartialMap(Page, NextRedraw, 0, Map^.Depth - 1, MapCols - 1, MapCols - 1, 0, MapRows - 1, MapRedrawStart);
     end
     else if NextRedraw.X < LastRedraw[Page].X then begin
+        SWSub.Init('X_ClearZBufFirstCol');
         X_ClearZBufFirstCol(Page);
+        SWSub.Stop;
 
         DrawPartialMap(Page, NextRedraw, 0, Map^.Depth - 1, 0, 0, 0, MapRows - 1, MapRedrawStart);
     end;
 
     if NextRedraw.Y > LastRedraw[Page].Y then begin
-        X_CLearZBufLastRow(Page);
+        SWSub.Init('X_ClearZBufLastRow');
+        X_ClearZBufLastRow(Page);
+        SWSub.Stop;
 
         DrawPartialMap(Page, NextRedraw, 0, Map^.Depth - 1, 0, MapCols - 1, MapRows - 1, MapRows - 1, MapRedrawStart);
     end
     else if NextRedraw.Y < LastRedraw[Page].Y then begin
-        X_CLearZBufFirstRow(Page);
+        SWSub.Init('X_ClearZBufFirstRow');
+        X_ClearZBufFirstRow(Page);
+        SWSub.Stop;
 
         DrawPartialMap(Page, NextRedraw, 0, Map^.Depth - 1, 0, MapCols - 1, 0, 0, MapRedrawStart);
     end;
 
     LastRedraw[Page] := NextRedraw;
+
+    SW.Stop;
 end;
 
 end.

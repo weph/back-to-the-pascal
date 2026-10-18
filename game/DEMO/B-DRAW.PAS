@@ -18,13 +18,10 @@ const
     Rows = LogicalScreenHeight div TileHeight;
     Iterations = 5;
 
-var
-    Profiler: TProfiler;
-
 procedure RunBenchmark(Title: string; Draw: TDrawFunc; Tile: PImage);
 var
     i: Byte;
-    Stopwatch: PStopwatch;
+    Stopwatch: TStopwatch;
     Num: string;
     Row, Col: Word;
 begin
@@ -33,8 +30,7 @@ begin
 
         Str(i, Num);
 
-        Stopwatch := Profiler.Stopwatch(Title + ' #' + Num);
-        Stopwatch^.Start;
+        Stopwatch.Init(Title + ' #' + Num);
 
         for Row := 0 to Rows - 1 do begin
             for Col := 0 to Cols - 1 do begin
@@ -42,7 +38,7 @@ begin
             end;
         end;
 
-        Stopwatch^.Stop;
+        Stopwatch.Stop;
     end;
 
     ReadLn;
@@ -51,7 +47,7 @@ end;
 procedure RunBenchmarkZ(Title: string; Draw: TDrawZFunc; Tile: PImage);
 var
     i: Byte;
-    Stopwatch: PStopwatch;
+    Stopwatch: TStopwatch;
     Num: string;
     Row, Col: Word;
 begin
@@ -61,8 +57,7 @@ begin
 
         Str(i, Num);
 
-        Stopwatch := Profiler.Stopwatch(Title + ' #' + Num);
-        Stopwatch^.Start;
+        Stopwatch.Init(Title + ' #' + Num);
 
         for Row := 0 to Rows - 1 do begin
             for Col := 0 to Cols - 1 do begin
@@ -70,7 +65,7 @@ begin
             end;
         end;
 
-        Stopwatch^.Stop;
+        Stopwatch.Stop;
     end;
 
     ReadLn;
@@ -81,8 +76,6 @@ var
     TileOpaque, TileAlpha: PImage;
 
 begin
-    Profiler.Init;
-
     InitModeX;
     X_InitZBuf;
     SetScreenWidth(LogicalScreenWidth);
@@ -101,7 +94,7 @@ begin
     SetVideoMode(3);
     X_DestroyZBuf;
 
-    Profiler.Print;
+    PrintProfile;
 
     ReadLn;
 end.

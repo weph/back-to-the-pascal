@@ -22,31 +22,15 @@ type
     PStopwatch = ^TStopwatch;
     TStopwatch = object
         Title: string;
-        Duration: LongInt;
+        StartedAt: LongInt;
+        LoggedStart: Boolean;
 
         constructor Init(TheTitle: string);
-        procedure Start;
+        procedure LogStart;
         procedure Stop;
     end;
 
-    PProfilerNode = ^TProfilerNode;
-    TProfilerNode = record
-        Stopwatch: PStopwatch;
-        Next: PProfilerNode;
-    end;
-
-    PProfiler = ^TProfiler;
-    TProfiler = object
-        Head, Tail: PProfilerNode;
-
-        constructor Init;
-        function Stopwatch(TheTitle: string): PStopwatch;
-        procedure Print;
-        procedure Write(Filename: string);
-    end;
-
-var
-    Profiler: PProfiler;
+procedure PrintProfile;
 
 function Timestamp: LongInt;
 
@@ -55,81 +39,51 @@ implementation
 uses
     Dos,
     Drivers,
+    Strings,
     VGA,
     ZenTimer,
     ModeX;
 
-constructor TProfiler.Init;
-begin
-    Head := nil;
-    Tail := nil;
-end;
-
-function TProfiler.Stopwatch;
 var
-    Next: PProfilerNode;
-    Result: PStopwatch;
-begin
-    New(Result, Init(TheTitle));
-
-    New(Next);
-    Next^.Stopwatch := Result;
-    Next^.Next := nil;
-
-    if Head = nil then begin
-        Head := Next;
-        Tail := Next;
-    end
-    else begin
-        Tail^.Next := Next;
-
-        Tail := Next;
-    end;
-
-    Stopwatch := Result;
-end;
-
-procedure TProfiler.Print;
-begin
-    Write('');
-end;
-
-procedure TProfiler.Write;
-var
-    Current: PProfilerNode;
-    Duration: LongInt;
     F: Text;
+    RunningStopwatches: Byte;
+    Indent: array[0..15] of string[32];
+    PrevExitProc: Pointer;
+
+procedure Log(Line: string; Duration: LongInt);
 begin
-    Assign(F, Filename);
-    Rewrite(F);
-
-    Current := Head;
-
-    while Current <> nil do begin
-        Duration := Current^.Stopwatch^.Duration;
-
-        WriteLn(F, Current^.Stopwatch^.Title, ': ', Duration div 1000, '.', Duration mod 1000, 'ms');
-
-        Current := Current^.Next;
-    end;
-
-    Close(F);
+    WriteLn(F, Line, ': ', Duration div 1000, '.', Duration mod 1000, 'ms');
 end;
 
 constructor TStopwatch.Init;
 begin
     Title := TheTitle;
+    StartedAt := LZTimerLap;
+    LoggedStart := false;
+    Inc(RunningStopwatches);
 end;
 
-procedure TStopwatch.Start;
+procedure TStopwatch.LogStart;
 begin
-    LZTimerOn;
+    LoggedStart := true;
+    WriteLn(F, Indent[RunningStopwatches - 1], Title);
 end;
 
 procedure TStopwatch.Stop;
+var
+    Duration: LongInt;
+    Line: string;
 begin
-    Duration := LZTimerLap;
-    LZTimerOff;
+    Duration := LZTimerLap - StartedAt;
+
+    Dec(RunningStopwatches);
+
+    if LoggedStart then begin
+        WriteLn(F, Indent[RunningStopwatches], '--> ', Duration div 1000, '.', Duration mod 1000, 'ms');
+    end
+    else begin
+        WriteLn(F, Indent[RunningStopwatches], Title, ': ', Duration div 1000, '.', Duration mod 1000, 'ms');
+    end;
 end;
 
 function Timestamp;
@@ -175,6 +129,47 @@ begin
     X_PutString(Page, X, Y, S);
 end;
 
+procedure InitializeIndents;
+var
+    i: Byte;
+    s: string;
 begin
-    New(Profiler, Init);
+    s := '';
+    for i := 0 to 15 do begin
+        Indent[i] := s;
+
+        s := Concat(s, '  ');
+    end;
+end;
+
+procedure PrintProfile;
+var
+    Line: string;
+begin
+    Reset(F);
+
+    while not Eof(F) do begin
+        ReadLn(F, Line);
+        Writeln(Line);
+    end;
+end;
+
+procedure CloseLog; far;
+begin
+    ExitProc := PrevExitProc;
+
+    Close(F);
+end;
+
+begin
+    ExitProc := @CloseLog;
+
+    RunningStopwatches := 0;
+
+    InitializeIndents;
+
+    Assign(F, 'profile.log');
+    Rewrite(F);
+
+    LZTimerOn;
 end.
