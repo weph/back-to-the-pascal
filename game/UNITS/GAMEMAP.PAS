@@ -28,11 +28,8 @@ uses
 constructor TGameMap.Init;
 var
     MapFile: file;
-    Line: string;
-    i, X, Y, Z: Word;
-    LL: Word;
+    i, Z: Word;
     W: Byte;
-    Tile: Byte;
     SW: PStopwatch;
 begin
     SW := Profiler^.Stopwatch('TGameMap.Init');
@@ -73,8 +70,6 @@ begin
 end;
 
 function TGameMap.TileAt;
-var
-    Index: Word;
 begin
     if (X >= Width) or (Y >= Height) or (Z >= Depth) then begin
         TileAt := 0;

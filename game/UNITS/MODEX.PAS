@@ -126,10 +126,7 @@ var
     Plane: Byte;
     Y: Word;
     PSeg, POfs: Word;
-    SW: PStopwatch;
 begin
-    SW := Profiler^.Stopwatch('ClearZBufLastCol');
-    SW^.Start;
     for Plane := 0 to 3 do begin
         PSeg := Seg(ZBuffer[Page][Plane]^);
         POfs := Ofs(ZBuffer[Page][Plane]^);
@@ -142,20 +139,15 @@ begin
             Inc(POfs, PlaneWidth);
         end;
     end;
-    SW^.Stop;
 end;
 
 procedure X_ClearZBufFirstRow(Page: Byte);
 var
     Plane: Byte;
     PSeg, POfs: Word;
-    SW: PStopwatch;
     RowSize: Word;
     Offset: Word;
 begin
-    {SW := Profiler^.Stopwatch('ClearZBufLastRow');
-     SW^.Start;}
-
     RowSize := PlaneWidth * 16;
     Offset := (PlaneWidth * LogicalScreenHeight) - RowSize;
 
@@ -167,7 +159,6 @@ begin
 
         FillChar(Ptr(PSeg, POfs)^, RowSize, 0);
     end;
-    {SW^.Stop;}
 end;
 
 procedure X_ClearZBufLastRow(Page: Byte);
@@ -698,7 +689,6 @@ var
     Height: Byte;
     Width: Word;
     PPlaneData: Pointer;
-    i: Byte;
     PlaneShift: Byte;
     PZBuffer: Pointer;
     CurPageOffset: Word;
@@ -860,11 +850,9 @@ var
     Height: Byte;
     Width: Byte;
     PPlaneData: Pointer;
-    i: Byte;
     PlaneShift: Byte;
     PZBuffer: Pointer;
     CurPageOffset: Word;
-    CurZ: Byte;
 begin
     ImageData := Image^.Data;
     EndOffset := Ofs(Image^.Data^) + Image^.MemSize;
@@ -1000,173 +988,6 @@ begin
         mov ah, 0
         add di, ax
         {inc dl}
-
-        dec bl
-        jnz @StartOver
-
-        inc &Plane
-        dec bh
-        jnz @DrawPlane
-
-        pop ds
-    end;
-end;
-
-procedure X_DrawAlphaZ_BUGGY(Page: Byte; X, Y: Word; Z: Byte; Image: PImage);
-var
-    ImageData: Pointer;
-    Plane: Byte;
-    StartYOffset: Word;
-    LineOffset: Word;
-    EndOffset: Word;
-    Height: Byte;
-    Width: Word;
-    PlaneShift: Byte;
-    PPlaneData: Pointer;
-    i: Byte;
-    PZBuffer: Pointer;
-    CurPageOffset: Word;
-begin
-    ImageData := Image^.Data;
-    EndOffset := Ofs(Image^.Data^) + Image^.MemSize;
-    LineOffset := PlaneWidth - (Image^.Width div 4);
-    Plane := 0;
-    CurPageOffset := PageOffset[Page];
-    StartYOffset := Y * PlaneWidth + (X div 4);
-    Height := Image^.Height;
-    Width := Image^.Width shr 2;
-
-    PlaneShift := X mod 4;
-    PPlaneData := @PlaneShiftData[PlaneShift];
-    PZBuffer := @ZBuffer[Page];
-
-    {
-        ds:si image data
-        es:di screen / z-buffer
-        bh    plane counter
-        bl    line counter
-        dx    line width
-     }
-    asm
-        push ds
-
-        lds si, ImageData
-
-        mov bh, 4              { number of planes }
-
-        mov ch, 0
-
-     @DrawPlane:
-        push ds
-        push si
-        push bx
-
-        lds si, PPlaneData
-
-        mov bl, Plane
-        mov bh, 0
-        shl bx, 1
-
-        mov al, ds:[si+bx]
-        mov ah, 0
-        mov di, StartYOffset
-        add di, ax
-
-        { z-buffer for current plane => es }
-        push di
-        push bx
-        les di, PZBuffer
-        mov bh, 0
-        mov bl, Plane
-        add bl, PlaneShift
-        and bx, 3
-        shl bx, 2
-        mov ax, es:[di+bx+2]
-        mov es, ax
-        pop bx
-        pop di
-
-        mov al, 2                { select plane operation }
-        mov ah, ds:[si+bx+1]     { actual plane }
-        mov dx, ScIndex
-        out dx, ax
-
-        pop bx
-        pop si
-        pop ds
-
-        mov bl, Height
-
-     @StartOver:
-        mov dx, Width
-
-     @MainLoop:
-        lodsw
-        or ax, ax
-        jz @NextLine
-
-        or al, al
-        jz @SkipPixels
-
-     @Draw:
-        mov cl, al
-        sub dx, cx
-        dec si
-
-        push bx
-        push dx
-
-        mov bx, 0 { continuous pixel counter }
-        mov dx, CurPageOffset
-
-     @NextPixel:
-        mov al, es:[di+bx]
-        cmp al, Z
-        ja @SkipPixel
-
-        mov al, Z
-        mov es:[di+bx], al
-
-        inc bx
-
-        dec cl
-        jnz @NextPixel
-
-     @SkipPixel:
-        cmp bx, 0
-        je @MoveOn
-
-        push cx
-        push es
-        add di, dx
-        mov ax, $a000
-        mov es, ax
-        mov cx, bx
-        rep movsb
-        sub di, dx
-        pop es
-        pop cx
-        jmp @Yo
-
-     @MoveOn:
-        inc si
-        inc di
-
-     @Yo:
-        pop dx
-        pop bx
-        jmp @MainLoop
-
-     @SkipPixels:
-        mov al, ah
-        xor ah, ah
-        add di, ax
-        sub dx, ax
-        jmp @MainLoop
-
-     @NextLine:
-        add di, LineOffset
-        add di, dx
 
         dec bl
         jnz @StartOver

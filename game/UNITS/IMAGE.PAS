@@ -74,11 +74,9 @@ end;
 
 procedure TImage.OpaqueEncode;
 var
-    i, Pos, CurrentLength: Word;
-    Plane, X, Y, PrevY: Word;
-    TempSize: Word;
+    i, Pos: Word;
+    Plane: Word;
     Temp: PChar;
-    Result: PImage;
 begin
     M_Alloc(Temp, MemSize);
 

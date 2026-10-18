@@ -45,7 +45,7 @@ var
 constructor TTopDownMapRenderer.Init(_Map: PGameMap; TilesetFilename: string);
 var
     Img: PCXImage;
-    i, X, Y, Page: Byte;
+    i, X, Y: Byte;
 begin
     inherited Init(_Map);
 

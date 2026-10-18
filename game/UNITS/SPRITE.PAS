@@ -28,12 +28,12 @@ begin
     Height := _Height;
 end;
 
-procedure TSprite.Update(Page: Byte; Frame: LongInt);
+procedure TSprite.Update;
 begin
     Halt(1);
 end;
 
-procedure TSprite.Draw(Page: Byte);
+procedure TSprite.Draw;
 begin
     Halt(1);
 end;

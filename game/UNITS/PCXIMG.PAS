@@ -102,7 +102,6 @@ end;
 function PcxImage.ImageAt;
 var
     Xp, Yp, i: Word;
-    Result: PImage;
     Temp: Pointer;
 begin
     M_Alloc(Temp, W * H);

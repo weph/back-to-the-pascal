@@ -59,14 +59,7 @@ begin
     end;
 end;
 
-procedure TMapRenderer.DrawPartialMap(
-    Page: Byte;
-    Offset: TCoordinate;
-    StartLayer, EndLayer: Byte;
-    StartCol, EndCol: Word;
-    StartRow, EndRow: Word;
-    Start: TCoordinate
-);
+procedure TMapRenderer.DrawPartialMap;
 begin
     RunError;
 end;
@@ -83,7 +76,6 @@ procedure TMapRenderer.Update(Page: Byte; Scroll: TCoordinate);
 var
     NextRedraw: TCoordinate;
     MapRedrawStart: TCoordinate;
-    S: string;
 begin
     NextRedraw.X := Scroll.X div TileWidth;
     NextRedraw.Y := Scroll.Y div TileHeight;

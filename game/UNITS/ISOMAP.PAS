@@ -25,7 +25,6 @@ var
     MapFile: Text;
     Line: string;
     X, Y, Z: Word;
-    LL: Word;
 begin
     Assign(MapFile, Filename);
     Reset(MapFile);
@@ -60,8 +59,6 @@ begin
 end;
 
 function TIsoMap.TileAt;
-var
-    Index: Word;
 begin
     if (X > MaxWidth) or (Y > MaxHeight) or (Z > MaxDepth) then begin
         TileAt := 0;

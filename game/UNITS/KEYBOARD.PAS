@@ -21,7 +21,7 @@ var
 procedure IntHandler;
     interrupt;
 var
-    ScanCode, KeyCode: Byte;
+    ScanCode: Byte;
 begin
     ScanCode := Port[$60];
     Keys[ScanCode mod 128] := ScanCode < 128;

@@ -64,8 +64,6 @@ begin
 end;
 
 procedure SetColor;
-var
-    R, G, B: Byte;
 begin
     Port[PaletteMask] := $ff;
     Port[PaletteWrite] := Index;

@@ -50,7 +50,6 @@ var
     MapScroll: TCoordinate;
     Break: Boolean;
     MaxScrollX, MaxScrollY: Word;
-    PTileX, PTileY, PTileXE, PTileYE: Integer;
     FPS: FPSInfo;
 begin
     FPS.Init(60);

@@ -53,7 +53,7 @@ var
 constructor TIsometricMapRenderer.Init(_Map: PGameMap; TilesetFilename: string);
 var
     Img: PCXImage;
-    i, X, Y, Page: Byte;
+    i: Byte;
 begin
     inherited Init(_Map);
 
@@ -112,9 +112,6 @@ var
     Z: Byte;
     SW: PStopwatch;
 begin
-    {StartLayer := 1;}
-    {EndLayer := 0;}
-
     if (StartRow = 0) and (EndRow = 0) then begin
         SW := Profiler^.Stopwatch('DrawPartialMap');
         SW^.Start;
@@ -208,17 +205,6 @@ begin
     end;
 
     SW^.Stop;
-
-    {for Col := StartCol to EndCol do begin
-         for Row := StartRow to EndRow do begin
-             with TilePositions[1,Row,Col] do begin
-                 SX := Start.X + X;
-                 SY := Start.Y + Y;
-
-                 X_DrawRect(Page, SX, SY, SX + 32, SY + 16, 0);
-             end;
-         end;
-     end;}
 end;
 
 procedure InitTilePositions;
