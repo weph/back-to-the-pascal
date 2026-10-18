@@ -108,45 +108,9 @@ procedure X_ClearZBufFirstCol(Page: Byte); external;
 
 procedure X_ClearZBufLastCol(Page: Byte); external;
 
-procedure X_ClearZBufFirstRow(Page: Byte);
-var
-    Plane: Byte;
-    PSeg, POfs: Word;
-    RowSize: Word;
-    Offset: Word;
-begin
-    RowSize := PlaneWidth * 16;
-    Offset := (PlaneWidth * LogicalScreenHeight) - RowSize;
+procedure X_ClearZBufFirstRow(Page: Byte); external;
 
-    for Plane := 0 to 3 do begin
-        PSeg := Seg(ZBuffer[Page][Plane]^);
-        POfs := Ofs(ZBuffer[Page][Plane]^);
-
-        Move(Ptr(PSeg, POfs)^, Ptr(PSeg, POfs + RowSize)^, Offset);
-
-        FillChar(Ptr(PSeg, POfs)^, RowSize, 0);
-    end;
-end;
-
-procedure X_ClearZBufLastRow(Page: Byte);
-var
-    Plane: Byte;
-    PSeg, POfs: Word;
-    RowSize: Word;
-    Offset: Word;
-begin
-    RowSize := PlaneWidth * 16;
-    Offset := (PlaneWidth * LogicalScreenHeight) - RowSize;
-
-    for Plane := 0 to 3 do begin
-        PSeg := Seg(ZBuffer[Page][Plane]^);
-        POfs := Ofs(ZBuffer[Page][Plane]^);
-
-        Move(Ptr(PSeg, POfs + RowSize)^, Ptr(PSeg, POfs)^, Offset);
-
-        FillChar(Ptr(PSeg, POfs + Offset)^, RowSize, 0);
-    end;
-end;
+procedure X_ClearZBufLastRow(Page: Byte); external;
 
 procedure X_DrawZBuf(Page: Byte);
 var
