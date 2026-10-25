@@ -107,7 +107,6 @@ procedure TIsometricMapRenderer.DrawPartialMap(
 );
 var
     Col, Row, TCol, TRow, Layer: Word;
-    SX, SY: LongInt;
     CellTiles: TCellTiles;
     Z: Byte;
     SW: TStopwatch;
@@ -123,10 +122,7 @@ begin
                     TRow := (Offset.Y + Row) shl 1;
                     Map^.CellTilesAt(TCol, TRow, Layer, CellTiles);
 
-                    SX := X;
-                    SY := Y;
-
-                    if (Sx < 0) or (Sy < 0) then
+                    if (X < 0) or (Y < 0) then
                         continue;
 
                     Z := (TRow + Layer);
@@ -134,19 +130,19 @@ begin
                         Inc(Z, Layer);
 
                     if CellTiles.Bottom <> 0 then begin
-                        X_DrawAlphaZ(Page, SX, SY + 8, Z + 2, Tiles[CellTiles.Bottom].Top);
+                        X_DrawAlphaZ(Page, X, Y + 8, Z + 2, Tiles[CellTiles.Bottom].Top);
                     end;
 
                     if CellTiles.Right <> 0 then begin
-                        X_DrawAlphaZ(Page, SX + 16, SY, Z + 1, Tiles[CellTiles.Right].Left);
+                        X_DrawAlphaZ(Page, X + 16, Y, Z + 1, Tiles[CellTiles.Right].Left);
                     end;
 
                     if CellTiles.Left <> 0 then begin
-                        X_DrawAlphaZ(Page, SX, SY, Z + 1, Tiles[CellTiles.Left].Right);
+                        X_DrawAlphaZ(Page, X, Y, Z + 1, Tiles[CellTiles.Left].Right);
                     end;
 
                     if CellTiles.Top <> 0 then begin
-                        X_DrawAlphaZ(Page, SX, SY, Z, Tiles[CellTiles.Top].Bottom);
+                        X_DrawAlphaZ(Page, X, Y, Z, Tiles[CellTiles.Top].Bottom);
                     end;
                 end;
             end;
@@ -166,10 +162,7 @@ begin
                     TRow := (Offset.Y + Row) shl 1;
                     Map^.CellTilesAt(TCol, TRow, Layer, CellTiles);
 
-                    SX := X;
-                    SY := Y;
-
-                    if (Sx < 0) or (Sy < 0) then
+                    if (X < 0) or (Y < 0) then
                         continue;
 
                     Z := (TRow + Layer);
@@ -177,19 +170,19 @@ begin
                         Inc(Z, Layer);
 
                     if CellTiles.Bottom <> 0 then begin
-                        X_DrawAlphaZ(Page, SX, SY + 8, Z + 2, Tiles[CellTiles.Bottom].Top);
+                        X_DrawAlphaZ(Page, X, Y + 8, Z + 2, Tiles[CellTiles.Bottom].Top);
                     end;
 
                     if CellTiles.Right <> 0 then begin
-                        X_DrawAlphaZ(Page, SX + 16, SY, Z + 1, Tiles[CellTiles.Right].Left);
+                        X_DrawAlphaZ(Page, X + 16, Y, Z + 1, Tiles[CellTiles.Right].Left);
                     end;
 
                     if CellTiles.Left <> 0 then begin
-                        X_DrawAlphaZ(Page, SX, SY, Z + 1, Tiles[CellTiles.Left].Right);
+                        X_DrawAlphaZ(Page, X, Y, Z + 1, Tiles[CellTiles.Left].Right);
                     end;
 
                     if CellTiles.Top <> 0 then begin
-                        X_DrawAlphaZ(Page, SX, SY, Z, Tiles[CellTiles.Top].Bottom);
+                        X_DrawAlphaZ(Page, X, Y, Z, Tiles[CellTiles.Top].Bottom);
                     end;
                 end;
             end;
