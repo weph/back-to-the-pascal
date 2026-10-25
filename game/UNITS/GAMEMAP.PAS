@@ -3,6 +3,10 @@ unit GameMap;
 interface
 
 type
+    TCellTiles = record
+        Top, Left, Right, Bottom: Byte;
+    end;
+
     PGameMap = ^TGameMap;
     TGameMap = object
         LayerSize: LongInt;
@@ -11,10 +15,12 @@ type
         NumTiles: Byte;
         Layers: array[0..255] of PChar;
         Walkable: array[0..255] of Boolean;
+        RowOffsets: array[0..255] of Word;
 
         constructor Init(Filename: string);
         destructor Destroy;
         function TileAt(X, Y, Z: Word): Byte;
+        procedure CellTilesAt(X, Y, Z: Word; var Result: TCellTiles);
         function IsWalkable(X, Y: Word): Boolean;
     end;
 
@@ -56,6 +62,10 @@ begin
 
     Close(MapFile);
 
+    for i := 0 to Height - 1 do begin
+        RowOffsets[i] := i * Width;
+    end;
+
     SW.Stop;
 end;
 
@@ -76,6 +86,31 @@ begin
     end;
 
     TileAt := Byte(Layers[Z][Y * Width + X]);
+end;
+
+procedure TGameMap.CellTilesAt(X, Y, Z: Word; var Result: TCellTiles);
+var
+    Offset: Word;
+begin
+    Offset := RowOffsets[Y] + X;
+
+    Result.Top := Byte(Layers[Z][Offset]);
+
+    if ((Y + 1) < Height) then begin
+        Result.Left := Byte(Layers[Z][Offset + Width - 1]);
+        Result.Right := Byte(Layers[Z][Offset + Width]);
+    end
+    else begin
+        Result.Left := 0;
+        Result.Right := 0;
+    end;
+
+    if ((Y + 2) < Height) then begin
+        Result.Bottom := Byte(Layers[Z][Offset + Width + Width]);
+    end
+    else begin
+        Result.Bottom := 0;
+    end;
 end;
 
 function TGameMap.IsWalkable;

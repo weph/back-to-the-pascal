@@ -108,7 +108,7 @@ procedure TIsometricMapRenderer.DrawPartialMap(
 var
     Col, Row, TCol, TRow, Layer: Word;
     SX, SY: LongInt;
-    TileTop, TileLeft, TileRight, TileBottom: Byte;
+    CellTiles: TCellTiles;
     Z: Byte;
     SW: TStopwatch;
 begin
@@ -121,10 +121,7 @@ begin
                 with TilePositions[Layer, Row, Col] do begin
                     TCol := Offset.X + Col + 1;
                     TRow := (Offset.Y + Row) shl 1;
-                    TileTop := Map^.TileAt(TCol, TRow, Layer);
-                    TileLeft := Map^.TileAt(TCol - 1, TRow + 1, Layer);
-                    TileRight := Map^.TileAt(TCol, TRow + 1, Layer);
-                    TileBottom := Map^.TileAt(TCol, TRow + 2, Layer);
+                    Map^.CellTilesAt(TCol, TRow, Layer, CellTiles);
 
                     SX := X;
                     SY := Y;
@@ -136,20 +133,20 @@ begin
                     if Layer > 0 then
                         Inc(Z, Layer);
 
-                    if TileBottom <> 0 then begin
-                        X_DrawAlphaZ(Page, SX, SY + 8, Z + 2, Tiles[TileBottom].Top);
+                    if CellTiles.Bottom <> 0 then begin
+                        X_DrawAlphaZ(Page, SX, SY + 8, Z + 2, Tiles[CellTiles.Bottom].Top);
                     end;
 
-                    if TileRight <> 0 then begin
-                        X_DrawAlphaZ(Page, SX + 16, SY, Z + 1, Tiles[TileRight].Left);
+                    if CellTiles.Right <> 0 then begin
+                        X_DrawAlphaZ(Page, SX + 16, SY, Z + 1, Tiles[CellTiles.Right].Left);
                     end;
 
-                    if TileLeft <> 0 then begin
-                        X_DrawAlphaZ(Page, SX, SY, Z + 1, Tiles[TileLeft].Right);
+                    if CellTiles.Left <> 0 then begin
+                        X_DrawAlphaZ(Page, SX, SY, Z + 1, Tiles[CellTiles.Left].Right);
                     end;
 
-                    if TileTop <> 0 then begin
-                        X_DrawAlphaZ(Page, SX, SY, Z, Tiles[TileTop].Bottom);
+                    if CellTiles.Top <> 0 then begin
+                        X_DrawAlphaZ(Page, SX, SY, Z, Tiles[CellTiles.Top].Bottom);
                     end;
                 end;
             end;
@@ -167,10 +164,7 @@ begin
                 with TilePositions[Layer, Row, Col] do begin
                     TCol := Offset.X + Col + 1;
                     TRow := (Offset.Y + Row) shl 1;
-                    TileTop := Map^.TileAt(TCol, TRow, Layer);
-                    TileLeft := Map^.TileAt(TCol - 1, TRow + 1, Layer);
-                    TileRight := Map^.TileAt(TCol, TRow + 1, Layer);
-                    TileBottom := Map^.TileAt(TCol, TRow + 2, Layer);
+                    Map^.CellTilesAt(TCol, TRow, Layer, CellTiles);
 
                     SX := X;
                     SY := Y;
@@ -182,20 +176,20 @@ begin
                     if Layer > 0 then
                         Inc(Z, Layer);
 
-                    if TileBottom <> 0 then begin
-                        X_DrawAlphaZ(Page, SX, SY + 8, Z + 2, Tiles[TileBottom].Top);
+                    if CellTiles.Bottom <> 0 then begin
+                        X_DrawAlphaZ(Page, SX, SY + 8, Z + 2, Tiles[CellTiles.Bottom].Top);
                     end;
 
-                    if TileRight <> 0 then begin
-                        X_DrawAlphaZ(Page, SX + 16, SY, Z + 1, Tiles[TileRight].Left);
+                    if CellTiles.Right <> 0 then begin
+                        X_DrawAlphaZ(Page, SX + 16, SY, Z + 1, Tiles[CellTiles.Right].Left);
                     end;
 
-                    if TileLeft <> 0 then begin
-                        X_DrawAlphaZ(Page, SX, SY, Z + 1, Tiles[TileLeft].Right);
+                    if CellTiles.Left <> 0 then begin
+                        X_DrawAlphaZ(Page, SX, SY, Z + 1, Tiles[CellTiles.Left].Right);
                     end;
 
-                    if TileTop <> 0 then begin
-                        X_DrawAlphaZ(Page, SX, SY, Z, Tiles[TileTop].Bottom);
+                    if CellTiles.Top <> 0 then begin
+                        X_DrawAlphaZ(Page, SX, SY, Z, Tiles[CellTiles.Top].Bottom);
                     end;
                 end;
             end;
