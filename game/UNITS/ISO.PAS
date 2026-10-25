@@ -116,10 +116,10 @@ begin
 
         for Layer := EndLayer downto StartLayer do begin
             Row := (Layer + 1) div 2;
+            TRow := (Offset.Y + Row) shl 1;
             for Col := StartCol to EndCol do begin
                 with TilePositions[Layer, Row, Col] do begin
                     TCol := Offset.X + Col + 1;
-                    TRow := (Offset.Y + Row) shl 1;
                     Map^.CellTilesAt(TCol, TRow, Layer, CellTiles);
 
                     if (X < 0) or (Y < 0) then
@@ -156,10 +156,10 @@ begin
 
     for Layer := EndLayer downto StartLayer do begin
         for Row := StartRow to EndRow do begin
+            TRow := (Offset.Y + Row) shl 1;
             for Col := StartCol to EndCol do begin
                 with TilePositions[Layer, Row, Col] do begin
                     TCol := Offset.X + Col + 1;
-                    TRow := (Offset.Y + Row) shl 1;
                     Map^.CellTilesAt(TCol, TRow, Layer, CellTiles);
 
                     if (X < 0) or (Y < 0) then
