@@ -117,6 +117,11 @@ begin
         for Layer := EndLayer downto StartLayer do begin
             Row := (Layer + 1) div 2;
             TRow := (Offset.Y + Row) shl 1;
+
+            Z := (TRow + Layer);
+            if Layer > 0 then
+                Inc(Z, Layer);
+
             for Col := StartCol to EndCol do begin
                 with TilePositions[Layer, Row, Col] do begin
                     TCol := Offset.X + Col + 1;
@@ -124,10 +129,6 @@ begin
 
                     if (X < 0) or (Y < 0) then
                         continue;
-
-                    Z := (TRow + Layer);
-                    if Layer > 0 then
-                        Inc(Z, Layer);
 
                     if CellTiles.Bottom <> 0 then begin
                         X_DrawAlphaZ(Page, X, Y + 8, Z + 2, Tiles[CellTiles.Bottom].Top);
@@ -157,6 +158,11 @@ begin
     for Layer := EndLayer downto StartLayer do begin
         for Row := StartRow to EndRow do begin
             TRow := (Offset.Y + Row) shl 1;
+
+            Z := (TRow + Layer);
+            if Layer > 0 then
+                Inc(Z, Layer);
+
             for Col := StartCol to EndCol do begin
                 with TilePositions[Layer, Row, Col] do begin
                     TCol := Offset.X + Col + 1;
@@ -164,10 +170,6 @@ begin
 
                     if (X < 0) or (Y < 0) then
                         continue;
-
-                    Z := (TRow + Layer);
-                    if Layer > 0 then
-                        Inc(Z, Layer);
 
                     if CellTiles.Bottom <> 0 then begin
                         X_DrawAlphaZ(Page, X, Y + 8, Z + 2, Tiles[CellTiles.Bottom].Top);
