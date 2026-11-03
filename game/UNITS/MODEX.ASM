@@ -11,8 +11,9 @@ PlaneWidth              EQU     96
 RowSize                 EQU     PlaneWidth * RowHeight
 ZBufColumnCopyWidth     EQU     (PlaneWidth - 8) SHR 2
 ZBufRowCopyWidth        EQU     PlaneWidth SHR 2
+ScIndex                 EQU     03c4h
 
-EXTRN   ZBuffer:DWORD
+EXTRN   ZBuffer:DWORD, VMemOffset:WORD
 
 CODESEG
 
@@ -21,7 +22,24 @@ PUBLIC  X_ClearZBufLastCol
 PUBLIC  X_ClearZBufFirstRow
 PUBLIC  X_ClearZBufLastRow
 
-%NEWPAGE
+PUBLIC  X_DrawOpaque
+
+;--------------------------------------------------------------------------
+; Set current video memory offset for page
+;--------------------------------------------------------------------------
+; Input:
+;      page
+; Output:
+;      target
+; Registers:
+;      ax, bx
+;--------------------------------------------------------------------------
+MACRO   SetVMemOffset page, target
+        movzx   bx, [page]
+        shl     bx, 1
+        mov     ax, [VMemOffset+bx]
+        mov     [target], ax
+ENDM    SetVMemOffset
 
 MACRO   ClearZBufCol Op, StartAddress, Page
         push    ds
@@ -148,5 +166,98 @@ PROC    X_ClearZBufLastRow FAR
 
         ret
 ENDP    X_ClearZBufLastRow
+
+PROC    X_DrawOpaque FAR
+        ARG     page:BYTE, x:WORD, y:WORD, image:DWORD = ArgSize
+        LOCAL   Width:WORD, Height:WORD, StartY:WORD, Remaining:WORD = StackSize
+
+        push    ds
+
+        les     di, [image]
+
+        ; Remaining = PlaneWidth - (image.width / 4)
+        mov     ax, [es:di]
+        shr     ax, 2
+        mov     bx, PlaneWidth
+        sub     bx, ax
+        mov     [Remaining], bx
+
+        ; Width = image.width / 4
+        mov     ax, [es:di]
+        shr     ax, 2
+        mov     [Width], ax
+
+        ; Height = image.height
+        mov     ax, [es:di+2]
+        mov     [Height], ax
+
+        SetVMemOffset page, StartY
+
+        mov     ax, [x]
+        shr     ax, 2
+        add     [StartY], ax
+
+        mov     ax, [y]
+        mov     bx, PlaneWidth
+        mul     bx
+        add     [StartY], ax
+
+        mov     ds, [es:di+8]
+        mov     si, [es:di+6]
+
+        mov     ax, 0a000h
+        mov     es, ax
+
+        mov     bx, 0
+
+@DrawPlane:
+        ; calculate effective plane
+        ; ax = 1 shl ((plane + planeshift) mod 4)
+        mov     cx, [x]
+        and     cx, 3
+        add     cx, bx
+        and     cx, 3
+        mov     ax, 1
+        shl     ax, cl
+
+        ; set plane
+        shl     ax, 8
+        mov     al, 2
+        mov     dx, ScIndex
+        out     dx, ax
+
+        mov     dx, [Height]
+
+        mov     di, [StartY]
+
+        mov     cx, [x]
+        and     cx, 3
+        add     cx, bx
+        cmp     cx, 3
+        jle     @DrawRow
+        add     di, 1
+
+@DrawRow:
+        mov     ax, [Width]
+        mov     cx, ax
+        shr     cx, 2
+        rep     movsd
+        mov     cl, al
+        and     cl, 3
+        rep     movsb
+
+        add     di, [Remaining]     ; next line in video memory
+
+        dec     dx
+        jnz     @DrawRow
+
+        add     bl, 1               ; next plane
+        cmp     bl, 4
+        jne     @DrawPlane
+
+        pop     ds
+
+        ret
+ENDP    X_DrawOpaque
 
 END

@@ -66,10 +66,12 @@ uses
 var
     PlaneShiftData: array[0..3, 0..3] of Word;
     ZBuffer: array[0..1, 0..3] of Pointer;
+    VMemOffset: array[0..1] of Word;
 
 procedure X_SetScrollOffset(Page: Byte; Offset: TCoordinate);
 begin
     ScrollOffset[Page] := Offset;
+    VMemOffset[Page] := PageOffset[Page] + Offset.Y * PlaneWidth + Offset.X shr 2;
 end;
 
 procedure X_InitZBuf;
@@ -230,78 +232,7 @@ begin
         X_Draw16x16Opaque(Page, X, Y, Image);
 end;
 
-procedure X_DrawOpaque(Page: Byte; X, Y: Word; Image: PImage);
-var
-    ImageData: PChar;
-    Width, Height, StartY, RemPlaneWidth: Word;
-    i: Byte;
-    Plane: Byte;
-    PlaneShift: Byte;
-    PlaneData: array[0..3] of Word;
-    PPlaneData: Pointer;
-begin
-    Width := Image^.Width shr 3;
-    Height := Image^.Height;
-    ImageData := Image^.Data;
-    StartY := PageOffset[Page] + (ScrollOffset[Page].Y + Y) * PlaneWidth + (ScrollOffset[Page].X + X) shr 2;
-    RemPlaneWidth := PlaneWidth - Image^.Width shr 2;
-
-    Plane := 0;
-    PlaneShift := X mod 4;
-    for i := 0 to 3 do begin
-        PlaneData[i] := (1 shl ((i + PlaneShift) mod 4) shl 8) or (Ord(i + PlaneShift > 3));
-    end;
-
-    PPlaneData := @PlaneData;
-
-    asm
-        push ds
-
-        lds si, ImageData
-
-        mov ax, $a000
-        mov es, ax
-
-        mov bx, 0
-
-     @DrawPlane:
-        push es
-        push di
-
-        les di, PPlaneData
-
-        mov al, 2                { select plane operation }
-        mov ah, es:[di+bx+1]     { actual plane }
-
-        mov dx, ScIndex          { set plane }
-        out dx, ax
-
-        mov dl, es:[di+bx]       { store x-offset in dx }
-        mov dh, 0
-
-        pop di
-        pop es
-
-        mov di, StartY           { start address }
-        add di, dx               { + x-offset }
-
-        mov dx, Height           { number of rows }
-     @DrawRow:
-        mov cx, Width            { copy row }
-        rep movsw
-
-        add di, RemPlaneWidth    { next line in video memory }
-
-        dec dx
-        jnz @DrawRow
-
-        add bl, 2                { next plane }
-        cmp bl, 8
-        jne @DrawPlane
-
-        pop ds
-    end;
-end;
+procedure X_DrawOpaque(Page: Byte; X, Y: Word; Image: PImage); external;
 
 procedure X_Draw16x16Opaque(Page: Byte; X, Y: Word; Image: PImage);
 const
