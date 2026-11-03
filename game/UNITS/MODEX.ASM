@@ -25,6 +25,7 @@ PUBLIC  X_ClearZBufFirstRow
 PUBLIC  X_ClearZBufLastRow
 
 PUBLIC  X_PutPixel
+PUBLIC  X_PutPixelZ
 
 PUBLIC  X_DrawOpaque
 PUBLIC  X_DrawAlpha
@@ -210,6 +211,62 @@ PROC    X_PutPixel FAR
 
         ret
 ENDP    X_PutPixel
+
+PROC    X_PutPixelZ FAR
+        ARG     page:BYTE, x:WORD, y:WORD, z:BYTE, color:BYTE = ArgSize
+
+        ; plane z-buffer segment to gs
+        mov     bx, [x]
+        and     bx, 3
+        shl     bx, 2
+        add     bx, 2
+        movzx   ax, [page]
+        shl     ax, 4
+        add     bx, ax
+        mov     gs, [WORD PTR ZBuffer+bx]
+
+        ; di = y * PlaneWidth + x / 4
+        mov     bx, PlaneWidth
+        mov     ax, [y]
+        mul     bx
+        mov     dx, [x]
+        shr     dx, 2
+        add     ax, dx
+        mov     di, ax
+
+        mov     dh, [z]
+        cmp     dh, [gs:di]
+        jb      @@End
+
+        mov     [gs:di], dh
+
+        ; di += VMemOffset
+        movzx   bx, [page]
+        shl     bx, 1
+        mov     ax, [VMemOffset+bx]
+        add     di, ax
+
+        ; calculate plane
+        ; ax = 1 shl (x mod 4)
+        mov     cx, [x]
+        and     cx, 3
+        mov     ax, 1
+        shl     ax, cl
+
+        ; set plane
+        shl     ax, 8
+        mov     al, 2
+        mov     dx, ScIndex
+        out     dx, ax
+
+        mov     ax, 0a000h
+        mov     es, ax
+        mov     al, [color]
+        mov     [es:di], al
+
+@@End:
+        ret
+ENDP    X_PutPixelZ
 
 PROC    X_DrawOpaque FAR
         ARG     page:BYTE, x:WORD, y:WORD, image:DWORD = ArgSize

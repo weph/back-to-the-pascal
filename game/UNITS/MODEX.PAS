@@ -149,24 +149,7 @@ end;
 
 procedure X_PutPixel(Page: Byte; X, Y: Word; Color: Byte); external;
 
-procedure X_PutPixelZ(Page: Byte; X, Y: Word; Z: Byte; Color: Byte);
-var
-    Plane: Byte;
-    Offset: Word;
-    PlaneZBuf: PChar;
-begin
-    Plane := X and 3;
-    Offset := Y * PlaneWidth + X shr 2;
-    PlaneZBuf := PChar(ZBuffer[Page][Plane]);
-
-    if Ord(PlaneZBuf[Offset]) < Z then begin
-        SelectPlanes(1 shl Plane);
-
-        Mem[$a000: PageOffset[Page] + Offset] := Color;
-
-        PlaneZBuf[Offset] := Chr(Z);
-    end;
-end;
+procedure X_PutPixelZ(Page: Byte; X, Y: Word; Z: Byte; Color: Byte); external;
 
 procedure X_PutChar(Page: Byte; X, Y: Word; C: Char);
 var
