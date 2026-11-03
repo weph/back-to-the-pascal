@@ -226,78 +226,7 @@ procedure X_DrawAlpha(Page: Byte; X, Y: Word; Z: Byte; Image: PImage); external;
 
 procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage); external;
 
-{
-  Copy up to 256x256 pixels from video memory to system memory
-
-  ds:si video memory
-  es:di destination
-
-  ah    plane (start plane-start plane+3)
-        start plane is derived from X (e.g. 1 if X=5, 2 if X=18)
-  al    actual plane (0-3) (essentially ah mod 4)
-  bh    plane counter
-  bl    line height
-  cx    line width
-  dx    gc index/data
-}
-procedure X_CopyToSysMem(Page: Byte; X, Y: Word; Width, Height: Byte; Target: Pointer);
-var
-    LineWidth, LineOffset: Word;
-    StartOffset: Word;
-begin
-    StartOffset := PageOffset[Page] + (ScrollOffset[Page].Y + Y) * PlaneWidth + (ScrollOffset[Page].X + X) shr 2;
-    LineWidth := Width shr 2;
-    LineOffset := PlaneWidth - LineWidth;
-
-    asm
-        push ds
-
-        mov ax, $a000       { initialize ds to video segment }
-        mov ds, ax
-
-        les di, Target      { initialize es:di to target memory }
-
-        mov dx, $3ce        { select read map select register in gc index}
-        mov al, 4
-        out dx, al
-
-        mov dx, $3cf        { set dx to gc data }
-
-        mov ax, X           { store start plane in ah }
-        and ax, 3
-        shl ax, 8
-
-        mov bh, 4           { set number of planes }
-
-     @GetPlane:
-        mov al, ah          { write actual plane (ah mod 4) to gc data }
-        and al, 3
-        out dx, al
-
-        mov bl, Height      { number of lines to copy }
-
-        mov si, StartOffset { start offset in video memory }
-
-        cmp ah, 4           { shift start offset by one if plane wraps around }
-        jl @NextRow
-        inc si
-
-     @NextRow:
-        mov cx, LineWidth   { copy line }
-        rep movsb
-
-        add si, LineOffset  { go to next line in video memory }
-
-        dec bl              { repeat for all lines }
-        jnz @NextRow
-
-        inc ah              { repeat for all planes }
-        dec bh
-        jnz @GetPlane
-
-        pop ds
-    end;
-end;
+procedure X_CopyToSysMem(Page: Byte; X, Y: Word; Width, Height: Byte; Target: Pointer); external;
 
 var
     Shift, Plane: Byte;

@@ -12,6 +12,8 @@ RowSize                 EQU     PlaneWidth * RowHeight
 ZBufColumnCopyWidth     EQU     (PlaneWidth - 8) SHR 2
 ZBufRowCopyWidth        EQU     PlaneWidth SHR 2
 ScIndex                 EQU     03c4h
+GcIndex                 EQU     03ceh
+GcData                  EQU     03cfh
 
 EXTRN   ZBuffer:DWORD, VMemOffset:WORD
 
@@ -25,6 +27,7 @@ PUBLIC  X_ClearZBufLastRow
 PUBLIC  X_DrawOpaque
 PUBLIC  X_DrawAlpha
 PUBLIC  X_DrawAlphaZ
+PUBLIC  X_CopyToSysMem
 
 ;--------------------------------------------------------------------------
 ; Set current video memory offset for page
@@ -620,5 +623,101 @@ PROC    X_DrawAlphaZ FAR
 
         ret
 ENDP    X_DrawAlphaZ
+
+;-------------------------------------------------------------------------
+; Copy up to 256x256 pixels from video memory to system memory
+;
+; ds:si video memory
+; es:di destination
+;
+; ah   plane (start plane-start plane+3)
+;      start plane is derived from X (e.g. 1 if X=5, 2 if X=18)
+; al   actual plane (0-3) (essentially ah mod 4)
+; bh   plane counter
+; bl   line height
+; cx   line width
+; dx   gc index/data
+;-------------------------------------------------------------------------
+PROC    X_CopyToSysMem FAR
+        ARG     page:BYTE, x:WORD, y:WORD, width:BYTE, height:BYTE, target:DWORD = ArgSize
+        LOCAL   StartOffset:WORD, LineWidth:WORD, LineOffset:WORD = StackSize
+
+        push    ds
+
+        SetVMemOffset page, StartOffset
+
+        mov     ax, [x]
+        shr     ax, 2
+        add     [StartOffset], ax
+
+        mov     ax, [y]
+        mov     bx, PlaneWidth
+        mul     bx
+        add     [StartOffset], ax
+
+        movzx   ax, [width]
+        shr     ax, 2
+        mov     [LineWidth], ax
+
+        mov     bx, PlaneWidth
+        sub     bx, ax
+        mov     [LineOffset], bx
+
+        ; video segment => ds
+        mov     ax, 0a000h
+        mov     ds, ax
+
+        ; target memory => es:di
+        les     di, [target]
+
+        ; select read map select register in gc index
+        mov     dx, GcIndex
+        mov     al, 4
+        out     dx, al
+
+        mov     ax, [x]             ; store start plane in ah
+        and     ax, 3
+        shl     ax, 8
+
+        mov     bh, 4               ; set number of planes
+
+        mov     dx, GcData
+
+@@GetPlane:
+        ; write actual plane (ah mod 4) to gc data
+        mov     al, ah
+        and     al, 3
+        out     dx, al
+
+        mov     bl, [height]        ; number of lines to copy
+
+        mov     si, [StartOffset]   ; start offset in video memory
+
+        ; shift start offset by one if plane wraps around
+        cmp     ah, 4
+        jl      @@NextRow
+        inc     si
+
+@@NextRow:
+        ; copy line
+        mov     cx, [LineWidth]
+        rep     movsb
+
+        ; go to next line in video memory
+        add     si, [LineOffset]
+
+        ; repeat for all lines
+        dec     bl
+        jnz     @@NextRow
+
+        ; repeat for all planes
+        inc     ah
+        dec     bh
+        jnz     @@GetPlane
+
+        pop     ds
+
+        ret
+ENDP    X_CopyToSysMem
 
 END
