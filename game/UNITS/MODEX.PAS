@@ -219,4 +219,13 @@ procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage); external
 
 procedure X_CopyToSysMem(Page: Byte; X, Y: Word; Width, Height: Byte; Target: Pointer); external;
 
+var
+    Offset: TCoordinate;
+
+begin
+    Offset.X := 0;
+    Offset.Y := 0;
+
+    X_SetScrollOffset(0, Offset);
+    X_SetScrollOffset(1, Offset);
 end.
