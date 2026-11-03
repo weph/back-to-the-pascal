@@ -87,7 +87,6 @@ begin
     TileAlpha := SourceImage.ImageAt(16, 0, 16, 16);
 
     RunBenchmark('X_DrawOpaque', X_DrawOpaque, TileOpaque);
-    RunBenchmark('X_Draw16x16Opaque', X_Draw16x16Opaque, TileOpaque);
     RunBenchmarkZ('X_DrawAlpha', X_DrawAlpha, TileAlpha);
     RunBenchmarkZ('X_DrawAlphaZ', X_DrawAlphaZ, TileAlpha);
 

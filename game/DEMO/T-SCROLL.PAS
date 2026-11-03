@@ -31,8 +31,6 @@ begin
         ScrollPos.Y := 480;
         X_SetScrollOffset(Page, ScrollPos);
 
-        X_Draw16x16Opaque(Page, 0, 0, TileOpaque);
-
         X_DrawOpaque(Page, 152, 112, TileOpaque);
 
         X_DrawAlphaZ(Page, 304, 0, 255, TileAlpha);
