@@ -66,10 +66,9 @@ end;
 
 procedure TMapRenderer.Draw(Page: Byte; Offset: TCoordinate; Start: TCoordinate);
 begin
+    X_SetScrollOffset(Page, Start);
     DrawPartialMap(Page, Offset, 0, Map^.Depth - 1, 0, MapCols - 1, 0, MapRows - 1, Start);
     LastRedraw[Page] := Start;
-
-    X_SetScrollOffset(Page, Start);
 end;
 
 procedure TMapRenderer.Update(Page: Byte; Scroll: TCoordinate);
