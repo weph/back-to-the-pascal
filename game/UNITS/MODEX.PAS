@@ -60,7 +60,6 @@ uses
     FMem;
 
 var
-    PlaneShiftData: array[0..3, 0..3] of Word;
     ZBuffer: array[0..1, 0..3] of Pointer;
     VMemOffset: array[0..1] of Word;
 
@@ -228,13 +227,4 @@ procedure X_DrawAlphaZ(Page: Byte; X, Y: Word; Z: Byte; Image: PImage); external
 
 procedure X_CopyToSysMem(Page: Byte; X, Y: Word; Width, Height: Byte; Target: Pointer); external;
 
-var
-    Shift, Plane: Byte;
-
-begin
-    for Shift := 0 to 3 do begin
-        for Plane := 0 to 3 do begin
-            PlaneShiftData[Shift][Plane] := (1 shl ((Plane + Shift) mod 4) shl 8) or (Ord(Plane + Shift > 3));
-        end;
-    end;
 end.
