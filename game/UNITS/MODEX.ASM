@@ -24,6 +24,8 @@ PUBLIC  X_ClearZBufLastCol
 PUBLIC  X_ClearZBufFirstRow
 PUBLIC  X_ClearZBufLastRow
 
+PUBLIC  X_PutPixel
+
 PUBLIC  X_DrawOpaque
 PUBLIC  X_DrawAlpha
 PUBLIC  X_DrawAlphaZ
@@ -43,7 +45,7 @@ MACRO   SetVMemOffset page, target
         movzx   bx, [page]
         shl     bx, 1
         mov     ax, [VMemOffset+bx]
-        mov     [target], ax
+        mov     target, ax
 ENDM    SetVMemOffset
 
 MACRO   ClearZBufCol Op, StartAddress, Page
@@ -171,6 +173,43 @@ PROC    X_ClearZBufLastRow FAR
 
         ret
 ENDP    X_ClearZBufLastRow
+
+PROC    X_PutPixel FAR
+        ARG     page:BYTE, x:WORD, y:WORD, color:BYTE = ArgSize
+
+        ; calculate plane
+        ; ax = 1 shl (x mod 4)
+        mov     cx, [x]
+        and     cx, 3
+        mov     ax, 1
+        shl     ax, cl
+
+        ; set plane
+        shl     ax, 8
+        mov     al, 2
+        mov     dx, ScIndex
+        out     dx, ax
+
+        ; di = VMemOffset + y * PlaneWidth + x / 4
+        mov     bx, PlaneWidth
+        mov     ax, [y]
+        mul     bx
+        mov     dx, [x]
+        shr     dx, 2
+        add     ax, dx
+        movzx   bx, [page]
+        shl     bx, 1
+        mov     dx, [VMemOffset+bx]
+        add     ax, dx
+        mov     di, ax
+
+        mov     ax, 0a000h
+        mov     es, ax
+        mov     al, [color]
+        mov     [es:di], al
+
+        ret
+ENDP    X_PutPixel
 
 PROC    X_DrawOpaque FAR
         ARG     page:BYTE, x:WORD, y:WORD, image:DWORD = ArgSize

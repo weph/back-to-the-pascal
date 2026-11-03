@@ -147,15 +147,7 @@ begin
     FillChar(Mem[$a000: $0000], 65535, Color);
 end;
 
-procedure X_PutPixel(Page: Byte; X, Y: Word; Color: Byte);
-var
-    Plane: Byte;
-begin
-    Plane := X and 3;
-
-    SelectPlanes(1 shl Plane);
-    Mem[$a000: PageOffset[Page] + Y * PlaneWidth + X shr 2] := Color;
-end;
+procedure X_PutPixel(Page: Byte; X, Y: Word; Color: Byte); external;
 
 procedure X_PutPixelZ(Page: Byte; X, Y: Word; Z: Byte; Color: Byte);
 var
