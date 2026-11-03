@@ -23,6 +23,7 @@ PUBLIC  X_ClearZBufFirstRow
 PUBLIC  X_ClearZBufLastRow
 
 PUBLIC  X_DrawOpaque
+PUBLIC  X_DrawAlpha
 
 ;--------------------------------------------------------------------------
 ; Set current video memory offset for page
@@ -259,5 +260,184 @@ PROC    X_DrawOpaque FAR
 
         ret
 ENDP    X_DrawOpaque
+
+PROC    X_DrawAlpha FAR
+        ARG     page:BYTE, x:WORD, y:WORD, z:BYTE, image:DWORD = ArgSize
+        LOCAL   imageseg:WORD, imageofs:WORD, Start:WORD, Height:BYTE, plane:BYTE, pwidth:BYTE, LineOffset:WORD, CurPageOffset:WORD = StackSize
+
+        push    ds
+
+        SetVMemOffset page, CurPageOffset
+
+        ; Start = y * PlaneWidth + x / 2
+        mov     bx, PlaneWidth
+        mov     ax, [y]
+        mul     bx
+        mov     [Start], ax
+        mov     ax, [x]
+        shr     ax, 2
+        add     [Start], ax
+
+        lds     si, [image]
+
+        ; Height = image.height
+        mov     al, [ds:si+2]
+        mov     [Height], al
+
+        ; pwidth = image.width / 4
+        mov     al, [ds:si]
+        shr     al, 2
+        mov     [pwidth], al
+
+        ; LineOffset = PlaneWidth - pwidth
+        mov     [LineOffset], PlaneWidth
+        sub     [LineOffset], ax
+
+        mov     [plane], 0
+
+        ; image data => ds:si
+        mov     ax, [ds:si+8]
+        mov     [imageseg], ax
+        mov     si, [ds:si+6]
+
+        mov     ax, 0a000h
+        mov     es, ax
+
+; bh: Count down number of pixels in current block
+; bl: image height
+; cx: Count up number of pixels to draw
+; dh: z-value
+; dl: image plane width
+;
+; ds: image
+; es: video memory
+; gs: z-buffer
+
+@@DrawPlane:
+        pop     ds
+        push    bx
+
+        ; plane z-buffer segment to gs
+        movzx   cx, [plane]
+        mov     bx, [x]
+        and     bx, 3
+        add     bx, cx
+        and     bx, 3
+        shl     bx, 2
+        add     bx, 2
+        movzx   ax, [page]
+        shl     ax, 4
+        add     bx, ax
+        mov     gs, [WORD PTR ZBuffer+bx]
+        mov     bx, [WORD PTR ZBuffer+bx]
+
+        ; calculate effective plane
+        ; ax = 1 shl ((plane + planeshift) mod 4)
+        movzx   bx, [plane]
+        mov     cx, [x]
+        and     cx, 3
+        add     cx, bx
+        and     cx, 3
+        mov     ax, 1
+        shl     ax, cl
+
+        ; set plane
+        shl     ax, 8
+        mov     al, 2
+        mov     dx, ScIndex
+        out     dx, ax
+
+        mov     di, [Start]
+
+        mov     cx, [x]
+        and     cx, 3
+        add     cx, bx
+        cmp     cx, 3
+        jle     @@Next
+
+        add     di, 1
+
+@@Next:
+        pop     bx
+
+        mov     bl, [Height]
+
+        mov     dh, [z]
+
+        push    ds
+        mov     ds, [imageseg]
+
+        mov     cx, 0               ; number of pixels to draw
+
+@@StartOver:
+        mov     dl, [pwidth]
+
+@@MainLoop:
+        lodsw
+        or      ax, ax
+        jz      @@NextLine
+
+        or      al, al
+        jz      @@SkipPixels
+
+@@Draw:
+        mov     bh, al              ; number of pixels in current block
+        sub     dl, bh
+        dec     si
+
+@@NextPixel:
+        cmp     dh, [gs:[di]]
+        jb      @@SkipPixel
+
+        inc     cl
+        inc     di
+
+        dec     bh
+        jnz     @@NextPixel
+
+        sub     di, cx
+        add     di, [CurPageOffset]
+        rep     movsb
+        sub     di, [CurPageOffset]
+
+        jmp     @@MainLoop
+
+@@SkipPixel:
+        sub     di, cx
+        add     di, [CurPageOffset]
+        rep     movsb
+        sub     di, [CurPageOffset]
+
+        inc     si
+        inc     di
+
+        dec     bh
+        jnz     @@NextPixel
+
+        jmp     @@MainLoop
+
+@@SkipPixels:
+        movzx   ax, ah
+        add     di, ax
+        sub     dl, al
+
+        jmp     @@MainLoop
+
+@@NextLine:
+        add     di, [LineOffset]
+        movzx   ax, dl
+        add     di, ax
+
+        dec     bl
+        jnz     @@StartOver
+
+        inc     [plane]
+        cmp     [plane], 4
+        jb      @@DrawPlane
+
+        pop     ds
+
+        ret
+ENDP    X_DrawAlpha
 
 END
