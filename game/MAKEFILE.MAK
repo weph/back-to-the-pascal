@@ -1,5 +1,8 @@
 TPC = tpc
+TPCFLAGS = -M -UUNITS;BUILD -EBUILD -OBUILD -$G+ -$D+ -$L+ -V
+
 TASM = tasm
+TASMFLAGS = /zi /ml
 
 help:
     @echo Usage: make [target]
@@ -12,27 +15,29 @@ help:
     @echo clean: removes all generated code
     @echo.
 
+OBJS = BUILD\MODEX.OBJ BUILD\ZBUF.OBJ
+DEMOS = DEMO\B-CALL.PAS DEMO\B-ISO.PAS DEMO\KEYS.PAS DEMO\T-ZBUFC.PAS \
+        DEMO\ZBUF.PAS DEMO\B-DRAW.PAS DEMO\B-MAPSCR.PAS DEMO\T-SCROLL.PAS \
+        DEMO\VMEMCPY.PAS
+
 all: main demos
 
-main: BUILD\MODEX.TPU
-    $(TPC) -B -UUNITS -EBUILD -OBUILD -$G+ MAIN.PAS
-
-{UNITS}.PAS{BUILD}.TPU:
-    $(TPC) -B -UUNITS -EBUILD -OBUILD -$G+ $D+ $L+ $<
+main: $(OBJS)
+    $(TPC) $(TPCFLAGS) MAIN.PAS
 
 {UNITS}.ASM{BUILD}.OBJ:
-    $(TASM) /zi /ml $< BUILD\$&.obj
+    $(TASM) $(TASMFLAGS) $< BUILD\$&.obj
 
-{DEMO}.PAS{BUILD}.EXE:
-    $(TPC) -B -UUNITS -EBUILD -OBUILD -$G+ $D+ $L+ -V $<
+demos: $(OBJS) build_demos
 
-demos: BUILD\MODEX.TPU BUILD\B-CALL.EXE BUILD\B-DRAW.EXE BUILD\B-ISO.EXE \
-       BUILD\B-MAPSCR.EXE BUILD\KEYS.EXE BUILD\T-SCROLL.EXE BUILD\T-ZBUFC.EXE \
-       BUILD\VMEMCPY.EXE BUILD\ZBUF.EXE
+build_demos: $(DEMOS)
+    &$(TPC) $(TPCFLAGS) $**
 
 clean:
-    del BUILD\*.*
+    del BUILD\*.OBJ
+    del BUILD\*.TPU
+    del BUILD\*.EXE
 
-BUILD\MODEX.TPU: BUILD\MODEX.OBJ
+BUILD\MODEX.OBJ: UNITS\MODEX.ASM UNITS\GLOBALS.ASM
 
-BUILD\ZBUF.TPU: BUILD\ZBUF.OBJ
+BUILD\ZBUF.OBJ: UNITS\ZBUF.ASM UNITS\GLOBALS.ASM
