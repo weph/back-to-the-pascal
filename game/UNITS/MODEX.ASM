@@ -441,47 +441,21 @@ PROC    X_DrawAlphaZ FAR
 
 @@DrawPlane:
         pop     ds
-        push    bx
 
         ; gs = z-buffer segment for current plane
         mov     ax, 1000h
         movzx   cx, [plane]
-        mov     bx, [x]
-        and     bx, 3
-        add     bx, cx
-        and     bx, 3
-        mul     bx
+        mul     cx
         add     ax, [ZBufferSegment]
         mov     gs, ax
 
-        ; calculate effective plane
-        ; ax = 1 shl ((plane + planeshift) mod 4)
-        movzx   bx, [plane]
-        mov     cx, [x]
-        and     cx, 3
-        add     cx, bx
-        and     cx, 3
-        mov     ax, 1
-        shl     ax, cl
-
         ; set plane
-        shl     ax, 8
-        mov     al, 2
+        mov     ax, 0102h
+        shl     ah, cl
         mov     dx, ScIndex
         out     dx, ax
 
         mov     di, [Start]         ; start address
-
-        mov     cx, [x]
-        and     cx, 3
-        add     cx, bx
-        cmp     cx, 3
-        jle     @@Next
-
-        add     di, 1
-
-@@Next:
-        pop     bx
 
         mov     bl, [Height]
 
