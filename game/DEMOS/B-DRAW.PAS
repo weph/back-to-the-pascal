@@ -83,7 +83,7 @@ begin
     SetScreenWidth(LogicalScreenWidth);
     SetVideoStartAddress(0, 0);
 
-    SourceImage.Init('demo\b-draw.pcx');
+    SourceImage.Init('demos\b-draw.pcx');
 
     TileOpaque := SourceImage.ImageAt(0, 0, 16, 16);
     TileAlpha := SourceImage.ImageAt(16, 0, 16, 16);
