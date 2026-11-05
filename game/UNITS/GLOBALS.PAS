@@ -25,6 +25,8 @@ const
 
 var
     Map: TGameMap;
+    VMemOffset: array[0..1] of Word;
+    ZBufferSegment: Word;
 
 implementation
 

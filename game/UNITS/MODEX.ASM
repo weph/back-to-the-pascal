@@ -4,25 +4,11 @@ IDEAL
 MODEL   TPASCAL
 P386
 
-LogicalScreenHeight     EQU     272
-ColumnWidth             EQU     8
-RowHeight               EQU     16
-PlaneWidth              EQU     96
-RowSize                 EQU     PlaneWidth * RowHeight
-ZBufColumnCopyWidth     EQU     (PlaneWidth - 8) SHR 2
-ZBufRowCopyWidth        EQU     PlaneWidth SHR 2
-ScIndex                 EQU     03c4h
-GcIndex                 EQU     03ceh
-GcData                  EQU     03cfh
+INCLUDE "UNITS\GLOBALS.ASM"
 
-EXTRN   ZBuffer:DWORD, VMemOffset:WORD
+EXTRN   ZBufferSegment:WORD, VMemOffset:WORD
 
 CODESEG
-
-PUBLIC  X_ClearZBufFirstCol
-PUBLIC  X_ClearZBufLastCol
-PUBLIC  X_ClearZBufFirstRow
-PUBLIC  X_ClearZBufLastRow
 
 PUBLIC  X_PutPixel
 PUBLIC  X_PutPixelZ
@@ -48,132 +34,6 @@ MACRO   SetVMemOffset page, target
         mov     ax, [VMemOffset+bx]
         mov     target, ax
 ENDM    SetVMemOffset
-
-MACRO   ClearZBufCol Op, StartAddress, Page
-        push    ds
-
-        movzx   dx, [Page]
-        shl     dx, 4
-
-        mov     eax, 0              ; value used by stosd to clear column
-
-        IFIDNI <Op>, <add>
-            cld
-        ELSE
-            std
-        ENDIF
-
-        plane = 0
-        REPT 4
-            pop     ds
-            mov     bx, plane
-            shl     bx, 2
-            add     bx, dx
-            mov     es, [WORD PTR ZBuffer+bx+2]
-
-            mov     bx, es
-            push    ds
-            mov     ds, bx
-
-            mov     si, StartAddress
-            Op      si, ColumnWidth
-
-            mov     di, StartAddress
-
-            REPT LogicalScreenHeight
-                mov     cx, ZBufColumnCopyWidth
-                rep     movsd
-
-                stosd
-                stosd
-
-                Op      si, ColumnWidth
-            ENDM
-
-            plane = plane + 1
-        ENDM
-
-        pop     ds
-ENDM
-
-MACRO   ClearZBufRow Op, StartAddress, Page
-        push    ds
-
-        movzx   dx, [page]
-        shl     dx, 4
-
-        mov     eax, 0              ; value used by stosd to clear column
-
-        IFIDNI <Op>, <add>
-            cld
-        ELSE
-            std
-        ENDIF
-
-        plane = 0
-        REPT 4
-            pop     ds
-            mov     bx, plane
-            shl     bx, 2
-            add     bx, dx
-            mov     es, [WORD PTR ZBuffer+bx+2]
-
-            mov     bx, es
-            push    ds
-            mov     ds, bx
-
-            mov     si, StartAddress
-            Op      si, RowSize
-
-            mov     di, StartAddress
-
-            REPT LogicalScreenHeight - RowHeight
-                mov     cx, ZBufRowCopyWidth
-                rep     movsd
-            ENDM
-
-            REPT RowHeight
-                mov     cx, ZBufRowCopyWidth
-                rep     stosd
-            ENDM
-
-            plane = plane + 1
-        ENDM
-
-        pop     ds
-ENDM
-
-PROC    X_ClearZBufFirstCol FAR
-        ARG     page:BYTE = ArgSize
-
-        ClearZBufCol sub, %(PlaneWidth * LogicalScreenHeight) - 4, page
-
-        ret
-ENDP    X_ClearZBufFirstCol
-
-PROC    X_ClearZBufLastCol FAR
-        ARG     page:BYTE = ArgSize
-
-        ClearZBufCol add, 0, page
-
-        ret
-ENDP    X_ClearZBufLastCol
-
-PROC    X_ClearZBufFirstRow FAR
-        ARG     page:BYTE = ArgSize
-
-        ClearZBufRow sub, %(PlaneWidth * LogicalScreenHeight) - 4, page
-
-        ret
-ENDP    X_ClearZBufFirstRow
-
-PROC    X_ClearZBufLastRow FAR
-        ARG     page:BYTE = ArgSize
-
-        ClearZBufRow add, 0, page
-
-        ret
-ENDP    X_ClearZBufLastRow
 
 PROC    X_PutPixel FAR
         ARG     page:BYTE, x:WORD, y:WORD, color:BYTE = ArgSize
@@ -215,36 +75,32 @@ ENDP    X_PutPixel
 PROC    X_PutPixelZ FAR
         ARG     page:BYTE, x:WORD, y:WORD, z:BYTE, color:BYTE = ArgSize
 
-        ; plane z-buffer segment to gs
+        ; gs = z-buffer segment for current plane
+        mov     ax, 1000h
         mov     bx, [x]
         and     bx, 3
-        shl     bx, 2
-        add     bx, 2
-        movzx   ax, [page]
-        shl     ax, 4
-        add     bx, ax
-        mov     gs, [WORD PTR ZBuffer+bx]
+        mul     bx
+        add     ax, [ZBufferSegment]
+        mov     gs, ax
 
-        ; di = y * PlaneWidth + x / 4
-        mov     bx, PlaneWidth
+        ; di = VMemOffset + y * PlaneWidth + x / 4
         mov     ax, [y]
+        mov     bx, PlaneWidth
         mul     bx
         mov     dx, [x]
         shr     dx, 2
         add     ax, dx
         mov     di, ax
+        movzx   bx, [page]
+        shl     bx, 1
+        mov     ax, [VMemOffset+bx]
+        add     di, ax
 
         mov     dh, [z]
         cmp     dh, [gs:di]
         jb      @@End
 
         mov     [gs:di], dh
-
-        ; di += VMemOffset
-        movzx   bx, [page]
-        shl     bx, 1
-        mov     ax, [VMemOffset+bx]
-        add     di, ax
 
         ; calculate plane
         ; ax = 1 shl (x mod 4)
@@ -292,7 +148,7 @@ PROC    X_DrawOpaque FAR
         mov     ax, [es:di+2]
         mov     [Height], ax
 
-        SetVMemOffset page, StartY
+        SetVMemOffset page, [StartY]
 
         mov     ax, [x]
         shr     ax, 2
@@ -363,17 +219,16 @@ ENDP    X_DrawOpaque
 
 PROC    X_DrawAlpha FAR
         ARG     page:BYTE, x:WORD, y:WORD, z:BYTE, image:DWORD = ArgSize
-        LOCAL   imageseg:WORD, imageofs:WORD, Start:WORD, Height:BYTE, plane:BYTE, pwidth:BYTE, LineOffset:WORD, CurPageOffset:WORD = StackSize
+        LOCAL   imageseg:WORD, imageofs:WORD, Start:WORD, Height:BYTE, plane:BYTE, pwidth:BYTE, LineOffset:WORD = StackSize
 
         push    ds
 
-        SetVMemOffset page, CurPageOffset
-
-        ; Start = y * PlaneWidth + x / 2
+        ; Start = CurPageOffset + y * PlaneWidth + x / 2
+        SetVMemOffset page, [Start]
         mov     bx, PlaneWidth
         mov     ax, [y]
         mul     bx
-        mov     [Start], ax
+        add     [Start], ax
         mov     ax, [x]
         shr     ax, 2
         add     [Start], ax
@@ -417,19 +272,16 @@ PROC    X_DrawAlpha FAR
         pop     ds
         push    bx
 
-        ; plane z-buffer segment to gs
+        ; gs = z-buffer segment for current plane
+        mov     ax, 1000h
         movzx   cx, [plane]
         mov     bx, [x]
         and     bx, 3
         add     bx, cx
         and     bx, 3
-        shl     bx, 2
-        add     bx, 2
-        movzx   ax, [page]
-        shl     ax, 4
-        add     bx, ax
-        mov     gs, [WORD PTR ZBuffer+bx]
-        mov     bx, [WORD PTR ZBuffer+bx]
+        mul     bx
+        add     ax, [ZBufferSegment]
+        mov     gs, ax
 
         ; calculate effective plane
         ; ax = 1 shl ((plane + planeshift) mod 4)
@@ -496,17 +348,13 @@ PROC    X_DrawAlpha FAR
         jnz     @@NextPixel
 
         sub     di, cx
-        add     di, [CurPageOffset]
         rep     movsb
-        sub     di, [CurPageOffset]
 
         jmp     @@MainLoop
 
 @@SkipPixel:
         sub     di, cx
-        add     di, [CurPageOffset]
         rep     movsb
-        sub     di, [CurPageOffset]
 
         inc     si
         inc     di
@@ -542,17 +390,16 @@ ENDP    X_DrawAlpha
 
 PROC    X_DrawAlphaZ FAR
         ARG     page:BYTE, x:WORD, y:WORD, z:BYTE, image:DWORD = ArgSize
-        LOCAL   imageseg:WORD, imageofs:WORD, Start:WORD, Height:BYTE, plane:BYTE, pwidth:BYTE, LineOffset:WORD, CurPageOffset:WORD = StackSize
+        LOCAL   imageseg:WORD, imageofs:WORD, Start:WORD, Height:BYTE, plane:BYTE, pwidth:BYTE, LineOffset:WORD = StackSize
 
         push    ds
 
-        SetVMemOffset page, CurPageOffset
-
-        ; Start = y * PlaneWidth + x / 2
+        ; Start = CurPageOffset + y * PlaneWidth + x / 2
+        SetVMemOffset page, [Start]
         mov     bx, PlaneWidth
         mov     ax, [y]
         mul     bx
-        mov     [Start], ax
+        add     [Start], ax
         mov     ax, [x]
         shr     ax, 2
         add     [Start], ax
@@ -596,19 +443,16 @@ PROC    X_DrawAlphaZ FAR
         pop     ds
         push    bx
 
-        ; plane z-buffer segment to gs
+        ; gs = z-buffer segment for current plane
+        mov     ax, 1000h
         movzx   cx, [plane]
         mov     bx, [x]
         and     bx, 3
         add     bx, cx
         and     bx, 3
-        shl     bx, 2
-        add     bx, 2
-        movzx   ax, [page]
-        shl     ax, 4
-        add     bx, ax
-        mov     gs, [WORD PTR ZBuffer+bx]
-        mov     bx, [WORD PTR ZBuffer+bx]
+        mul     bx
+        add     ax, [ZBufferSegment]
+        mov     gs, ax
 
         ; calculate effective plane
         ; ax = 1 shl ((plane + planeshift) mod 4)
@@ -676,17 +520,13 @@ PROC    X_DrawAlphaZ FAR
         jnz     @@NextPixel
 
         sub     di, cx
-        add     di, [CurPageOffset]
         rep     movsb
-        sub     di, [CurPageOffset]
 
         jmp     @@MainLoop
 
 @@SkipPixel:
         sub     di, cx
-        add     di, [CurPageOffset]
         rep     movsb
-        sub     di, [CurPageOffset]
 
         inc     si
         inc     di
@@ -740,7 +580,7 @@ PROC    X_CopyToSysMem FAR
 
         push    ds
 
-        SetVMemOffset page, StartOffset
+        SetVMemOffset page, [StartOffset]
 
         mov     ax, [x]
         shr     ax, 2

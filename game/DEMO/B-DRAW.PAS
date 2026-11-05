@@ -1,3 +1,4 @@
+{$M 16384, 0, 131070}
 program DrawBenchmark;
 uses
     Globals,
@@ -7,7 +8,8 @@ uses
     PCXImg,
     Image,
     Debug,
-    Drivers;
+    Drivers,
+    ZBuf;
 
 type
     TDrawFunc = procedure(Page: Byte; X, Y: Word; Image: PImage);
@@ -53,7 +55,7 @@ var
 begin
     for i := 0 to Iterations - 1 do begin
         X_Fill(7);
-        X_ClearZBuf(0);
+        ZBuf_Clear;
 
         Str(i, Num);
 
@@ -77,7 +79,7 @@ var
 
 begin
     InitModeX;
-    X_InitZBuf;
+    ZBuf_Init;
     SetScreenWidth(LogicalScreenWidth);
     SetVideoStartAddress(0, 0);
 
@@ -91,7 +93,7 @@ begin
     RunBenchmarkZ('X_DrawAlphaZ', X_DrawAlphaZ, TileAlpha);
 
     SetVideoMode(3);
-    X_DestroyZBuf;
+    ZBuf_Destroy;
 
     PrintProfile;
 

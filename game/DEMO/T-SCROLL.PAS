@@ -1,4 +1,5 @@
 { Test program that draws images at an offset in video memory }
+{$M 16384, 0, 131070}
 program TestScroll;
 uses
     Globals,
@@ -6,7 +7,8 @@ uses
     VGA,
     ModeX,
     PCXImg,
-    Image;
+    Image,
+    ZBuf;
 
 var
     SourceImage: PCXImage;
@@ -15,6 +17,8 @@ var
     Page: Byte;
 
 begin
+    ZBuf_Init;
+
     InitModeX;
     SetScreenWidth(LogicalScreenWidth);
     SetVideoStartAddress(0, 0);
@@ -42,4 +46,6 @@ begin
     end;
 
     SetVideoMode(3);
+
+    ZBuf_Destroy;
 end.

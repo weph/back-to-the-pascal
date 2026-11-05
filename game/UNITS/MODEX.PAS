@@ -6,30 +6,13 @@ interface
 uses
     Globals,
     Image,
-    Types;
+    Types,
+    ZBuf;
 
 var
     ScrollOffset: array[0..1] of TCoordinate;
 
 procedure X_SetScrollOffset(Page: Byte; Offset: TCoordinate);
-
-procedure X_InitZBuf;
-
-procedure X_DestroyZBuf;
-
-procedure X_DrawZBuf(Page: Byte);
-
-procedure X_ClearZBuf(Page: Byte);
-
-procedure X_ClearZBufFirstCol(Page: Byte);
-
-procedure X_ClearZBufLastCol(Page: Byte);
-
-procedure X_ClearZBufFirstRow(Page: Byte);
-
-procedure X_ClearZBufLastRow(Page: Byte);
-
-procedure X_DumpZBuf(Page: Byte; X, Y, Width, Height: Word);
 
 procedure X_Fill(Color: Byte);
 
@@ -59,86 +42,10 @@ uses
     Debug,
     FMem;
 
-var
-    ZBuffer: array[0..1, 0..3] of Pointer;
-    VMemOffset: array[0..1] of Word;
-
 procedure X_SetScrollOffset(Page: Byte; Offset: TCoordinate);
 begin
     ScrollOffset[Page] := Offset;
     VMemOffset[Page] := PageOffset[Page] + Offset.Y * PlaneWidth + Offset.X shr 2;
-end;
-
-procedure X_InitZBuf;
-var
-    Page, Plane: Byte;
-begin
-    for Page := 0 to 1 do begin
-        for Plane := 0 to 3 do begin
-            M_Alloc(ZBuffer[Page][Plane], PlaneWidth * LogicalScreenHeight);
-            FillChar(ZBuffer[Page][Plane]^, PlaneWidth * LogicalScreenHeight, 0);
-        end;
-    end;
-end;
-
-procedure X_DestroyZBuf;
-var
-    Page, Plane: Byte;
-begin
-    for Page := 0 to 1 do begin
-        for Plane := 0 to 3 do begin
-            M_Free(ZBuffer[Page][Plane], PlaneWidth * LogicalScreenHeight);
-        end;
-    end;
-end;
-
-procedure X_ClearZBuf(Page: Byte);
-var
-    Plane: Byte;
-begin
-    for Plane := 0 to 3 do begin
-        FillChar(ZBuffer[Page][Plane]^, PlaneWidth * LogicalScreenHeight, 0);
-    end;
-end;
-
-procedure X_ClearZBufFirstCol(Page: Byte); external;
-
-procedure X_ClearZBufLastCol(Page: Byte); external;
-
-procedure X_ClearZBufFirstRow(Page: Byte); external;
-
-procedure X_ClearZBufLastRow(Page: Byte); external;
-
-procedure X_DrawZBuf(Page: Byte);
-var
-    Y, X: Word;
-    C: TColor;
-begin
-    for X := 0 to 255 do begin
-        C.Red := X;
-        C.Green := X;
-        C.Blue := X;
-
-        SetColor(X, C);
-    end;
-
-    for Y := 0 to LogicalScreenHeight do begin
-        for X := 0 to LogicalScreenWidth do begin
-            X_PutPixel(Page, X, Y, Ord(PChar(ZBuffer[Page][X and 3])[Y * PlaneWidth + X shr 2]) shl 2);
-        end;
-    end;
-end;
-
-procedure X_DumpZBuf(Page: Byte; X, Y, Width, Height: Word);
-var
-    XP, YP: Word;
-begin
-    for YP := Y to Y + Height do begin
-        for XP := X to X + Width do begin
-            Write(Ord(PChar(ZBuffer[Page][XP and 3])[YP * PlaneWidth + XP shr 2]), ' ');
-        end;
-        WriteLn('');
-    end;
 end;
 
 procedure X_Fill(Color: Byte);

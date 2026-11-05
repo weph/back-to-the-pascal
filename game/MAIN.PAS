@@ -1,4 +1,5 @@
 {$R-,S-}
+{$M 16384, 0, 131070}
 program Main;
 uses
     Crt,
@@ -15,7 +16,8 @@ uses
     Malloc,
     Globals,
     Renderer,
-    Iso;
+    Iso,
+    ZBuf;
 
 var
     Frame: LongInt;
@@ -123,6 +125,10 @@ begin
     end;
     DisableKeyboardHandler;
 
+    Page := (Page + 1) and 1;
+    X_Fill(Page);
+    ZBuf_Draw(Page);
+
     Player.Destroy;
 end;
 
@@ -132,7 +138,7 @@ var
 begin
     InitModeX;
     SetScreenWidth(LogicalScreenWidth);
-    X_InitZBuf;
+    ZBuf_Init;
     X_Fill(0);
 
     Map.Init('assets\iso2.map');
@@ -141,25 +147,14 @@ begin
 
     MainLoop;
 
-    SetVideoStartAddress(PageOffset[0] + ScreenOffset + 8, 0);
-    X_Fill(0);
-    {X_ClearZBufFirstCol(0);}
-    {X_ClearZBufFirstRow(0);}
-    {X_ClearZBufLastRow(0);}
-    X_DrawZBuf(0);
     ReadLn;
-
-    {SetVideoStartAddress(PageOffset[1] + ScreenOffset + 8, 0);
-     X_Fill(0);
-     X_DrawZBuf(1);
-     ReadLn;}
 
     SetVideoMode(3);
 
     MapRenderer.Destroy;
     Map.Destroy;
     R_Destroy;
-    X_DestroyZBuf;
+    ZBuf_Destroy;
 
     M_Debug;
 end.

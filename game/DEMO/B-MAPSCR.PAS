@@ -1,3 +1,4 @@
+{$M 16384, 0, 131070}
 program MapScrollBenchmark;
 uses
     Globals,
@@ -6,7 +7,8 @@ uses
     Types,
     Iso,
     Renderer,
-    Debug;
+    Debug,
+    ZBuf;
 
 var
     MapScroll: TCoordinate;
@@ -18,7 +20,7 @@ var
 begin
     InitModeX;
     SetScreenWidth(LogicalScreenWidth);
-    X_InitZBuf;
+    ZBuf_Init;
     X_Fill(0);
 
     Page := 0;
@@ -57,4 +59,5 @@ begin
     end;
 
     SetVideoMode(3);
+    ZBuf_Destroy;
 end.

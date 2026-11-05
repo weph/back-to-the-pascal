@@ -1,3 +1,4 @@
+{$M 16384, 0, 65535}
 program TestZBufferClear;
 uses
     Globals,
@@ -5,12 +6,13 @@ uses
     VGA,
     ModeX,
     PCXImg,
-    Debug;
+    Debug,
+    ZBuf;
 
 procedure ClearScreenAndZBuffer(Page: Byte);
 begin
     SetVideoStartAddress(PageOffset[Page], 0);
-    X_ClearZBuf(Page);
+    ZBuf_Clear;
     X_Fill(0);
 end;
 
@@ -25,15 +27,15 @@ begin
         end;
     end;
 
-    X_DrawZBuf(Page);
+    ZBuf_Draw(Page);
 
     ReadLn;
 
-    Stopwatch.Init('X_ClearZBufFirstCol');
-    X_ClearZBufFirstCol(Page);
+    Stopwatch.Init('ZBuf_ClearFirstCol');
+    ZBuf_ClearFirstCol(Page);
     Stopwatch.Stop;
 
-    X_DrawZBuf(Page);
+    ZBuf_Draw(Page);
 
     ReadLn;
 
@@ -53,15 +55,15 @@ begin
         end;
     end;
 
-    X_DrawZBuf(Page);
+    ZBuf_Draw(Page);
 
     ReadLn;
 
-    Stopwatch.Init('X_ClearZBufLastCol');
-    X_ClearZBufLastCol(Page);
+    Stopwatch.Init('ZBuf_ClearLastCol');
+    ZBuf_ClearLastCol(Page);
     Stopwatch.Stop;
 
-    X_DrawZBuf(Page);
+    ZBuf_Draw(Page);
 
     ReadLn;
 
@@ -81,15 +83,15 @@ begin
         end;
     end;
 
-    X_DrawZBuf(Page);
+    ZBuf_Draw(Page);
 
     ReadLn;
 
-    Stopwatch.Init('X_ClearZBufFirstRow');
-    X_ClearZBufFirstRow(Page);
+    Stopwatch.Init('ZBuf_ClearFirstRow');
+    ZBuf_ClearFirstRow(Page);
     Stopwatch.Stop;
 
-    X_DrawZBuf(Page);
+    ZBuf_Draw(Page);
 
     ReadLn;
 
@@ -109,15 +111,15 @@ begin
         end;
     end;
 
-    X_DrawZBuf(Page);
+    ZBuf_Draw(Page);
 
     ReadLn;
 
-    Stopwatch.Init('X_ClearZBufLastRow');
-    X_ClearZBufLastRow(Page);
+    Stopwatch.Init('ZBuf_ClearLastRow');
+    ZBuf_ClearLastRow(Page);
     Stopwatch.Stop;
 
-    X_DrawZBuf(Page);
+    ZBuf_Draw(Page);
 
     ReadLn;
 
@@ -130,10 +132,10 @@ var
     Page: Byte;
 
 begin
+    ZBuf_Init;
     InitModeX;
     SetScreenWidth(LogicalScreenWidth);
     SetVideoStartAddress(0, 0);
-    X_InitZBuf;
 
     for Page := 0 to 1 do begin
         SetVideoStartAddress(PageOffset[Page], 0);
@@ -152,6 +154,7 @@ begin
     end;
 
     SetVideoMode(3);
+    ZBuf_Destroy;
 
     PrintProfile;
 

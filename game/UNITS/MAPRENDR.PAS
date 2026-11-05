@@ -38,7 +38,8 @@ uses
     PCXImg,
     VGA,
     ModeX,
-    Debug;
+    Debug,
+    ZBuf;
 
 const
     MapCols = LogicalScreenWidth div TileWidth;
@@ -88,30 +89,30 @@ begin
     X_SetScrollOffset(Page, MapRedrawStart);
 
     if NextRedraw.X > LastRedraw[Page].X then begin
-        SWSub.Init('X_ClearZBufLastCol');
-        X_ClearZBufLastCol(Page);
+        SWSub.Init('ZBuf_ClearLastCol');
+        ZBuf_ClearLastCol(Page);
         SWSub.Stop;
 
         DrawPartialMap(Page, NextRedraw, 0, Map^.Depth - 1, MapCols - 1, MapCols - 1, 0, MapRows - 1, MapRedrawStart);
     end
     else if NextRedraw.X < LastRedraw[Page].X then begin
-        SWSub.Init('X_ClearZBufFirstCol');
-        X_ClearZBufFirstCol(Page);
+        SWSub.Init('ZBuf_ClearFirstCol');
+        ZBuf_ClearFirstCol(Page);
         SWSub.Stop;
 
         DrawPartialMap(Page, NextRedraw, 0, Map^.Depth - 1, 0, 0, 0, MapRows - 1, MapRedrawStart);
     end;
 
     if NextRedraw.Y > LastRedraw[Page].Y then begin
-        SWSub.Init('X_ClearZBufLastRow');
-        X_ClearZBufLastRow(Page);
+        SWSub.Init('ZBuf_ClearLastRow');
+        ZBuf_ClearLastRow(Page);
         SWSub.Stop;
 
         DrawPartialMap(Page, NextRedraw, 0, Map^.Depth - 1, 0, MapCols - 1, MapRows - 1, MapRows - 1, MapRedrawStart);
     end
     else if NextRedraw.Y < LastRedraw[Page].Y then begin
-        SWSub.Init('X_ClearZBufFirstRow');
-        X_ClearZBufFirstRow(Page);
+        SWSub.Init('ZBuf_ClearFirstRow');
+        ZBuf_ClearFirstRow(Page);
         SWSub.Stop;
 
         DrawPartialMap(Page, NextRedraw, 0, Map^.Depth - 1, 0, MapCols - 1, 0, 0, MapRedrawStart);
