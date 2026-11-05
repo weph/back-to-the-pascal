@@ -223,7 +223,7 @@ PROC    X_DrawAlpha FAR
 
         push    ds
 
-        ; Start = CurPageOffset + y * PlaneWidth + x / 2
+        ; Start = CurPageOffset + y * PlaneWidth + x / 4
         SetVMemOffset page, [Start]
         mov     bx, PlaneWidth
         mov     ax, [y]
@@ -394,7 +394,7 @@ PROC    X_DrawAlphaZ FAR
 
         push    ds
 
-        ; Start = CurPageOffset + y * PlaneWidth + x / 2
+        ; Start = CurPageOffset + y * PlaneWidth + x / 4
         SetVMemOffset page, [Start]
         mov     bx, PlaneWidth
         mov     ax, [y]
