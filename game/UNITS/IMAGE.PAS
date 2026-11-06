@@ -99,74 +99,38 @@ end;
 
 procedure TImage.TransparencyEncode;
 var
-    Transparent: Boolean;
-    i, Pos, CurrentLength: Word;
+    X, Y: Word;
+    Pos, CurrentLength: Word;
     Plane: Byte;
     TempSize: Word;
     Temp: PChar;
+    Mask: Byte;
+    CurrentBit: Byte;
+    CurrentValue: Byte;
 begin
-    TempSize := Width * Height * 4;
+    TempSize := Width * Height + Height;
     M_Alloc(Temp, TempSize);
 
     Pos := 0;
 
     for Plane := 0 to 3 do begin
-        i := Plane;
-        Transparent := false;
-        CurrentLength := 0;
+        for Y := 0 to Height - 1 do begin
+            Mask := 0;
+            CurrentLength := 0;
 
-        while i < Width * Height do begin
-            if (i >= Width) and ((i - Plane) mod Width = 0) then begin
-                if not Transparent then begin
-                    Temp[Pos] := Chr(CurrentLength);
-                    Inc(Pos, CurrentLength + 1);
+            for X := 0 to (Width shr 2) - 1 do begin
+                CurrentBit := 7 - X;
+                CurrentValue := Ord(Data[Y * Width + (X * 4) + Plane]);
+
+                if CurrentValue <> 0 then begin
+                    Mask := Mask or (1 shl CurrentBit);
+                    Inc(CurrentLength);
+                    Temp[Pos + CurrentLength] := Chr(CurrentValue);
                 end;
-
-                Temp[Pos] := Chr(0);
-                Temp[Pos + 1] := Chr(0);
-                Inc(Pos, 2);
-
-                Transparent := false;
-                CurrentLength := 0;
             end;
 
-            if Transparent = (Ord(Data[i]) = 0) then begin
-                Inc(CurrentLength);
-            end
-            else begin
-                if Transparent then begin
-                    Temp[Pos] := Chr(0);
-                    Temp[Pos + 1] := Chr(CurrentLength);
-                    Inc(Pos, 2);
-                end
-                else if CurrentLength > 0 then begin
-                    Temp[Pos] := Chr(CurrentLength);
-                    Inc(Pos, CurrentLength + 1);
-                end;
-
-                CurrentLength := 1;
-                Transparent := not Transparent;
-            end;
-
-            if not Transparent then begin
-                Temp[Pos + CurrentLength] := Data[i];
-            end;
-
-            Inc(i, 4);
-        end;
-
-        if Transparent then begin
-            Temp[Pos] := Chr(0);
-            Temp[Pos + 1] := Chr(0);
-            Inc(Pos, 2);
-        end
-        else begin
-            Temp[Pos] := Chr(CurrentLength);
+            Temp[Pos] := Chr(Mask);
             Inc(Pos, CurrentLength + 1);
-            Temp[Pos] := Chr(0);
-            Temp[Pos + 1] := Chr(0);
-            Inc(Pos, 2);
-
         end;
     end;
 

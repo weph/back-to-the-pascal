@@ -18,6 +18,9 @@ PUBLIC  X_DrawAlpha
 PUBLIC  X_DrawAlphaZ
 PUBLIC  X_CopyToSysMem
 
+INCLUDE "UNITS\DRAW.ASM"
+INCLUDE "UNITS\DRAWZ.ASM"
+
 ;--------------------------------------------------------------------------
 ; Set current video memory offset for page
 ;--------------------------------------------------------------------------
@@ -219,9 +222,17 @@ ENDP    X_DrawOpaque
 
 PROC    X_DrawAlpha FAR
         ARG     page:BYTE, x:WORD, y:WORD, z:BYTE, image:DWORD = ArgSize
-        LOCAL   imageseg:WORD, imageofs:WORD, Start:WORD, Height:BYTE, plane:BYTE, pwidth:BYTE, LineOffset:WORD = StackSize
+        LOCAL   Start:WORD, Height:BYTE, ZBufferStart:WORD = StackSize
 
         push    ds
+
+        ; video memory => es
+        mov     ax, 0a000h
+        mov     es, ax
+
+        ; store z-buffer segment in local variable to avoid pushing/popping ds
+        mov     dx, [WORD PTR ZBufferSegment]
+        mov     [ZBufferStart], dx
 
         ; Start = CurPageOffset + y * PlaneWidth + x / 4
         SetVMemOffset page, [Start]
@@ -239,149 +250,57 @@ PROC    X_DrawAlpha FAR
         mov     al, [ds:si+2]
         mov     [Height], al
 
-        ; pwidth = image.width / 4
-        mov     al, [ds:si]
-        shr     al, 2
-        mov     [pwidth], al
-
-        ; LineOffset = PlaneWidth - pwidth
-        mov     [LineOffset], PlaneWidth
-        sub     [LineOffset], ax
-
-        mov     [plane], 0
-
         ; image data => ds:si
         mov     ax, [ds:si+8]
-        mov     [imageseg], ax
         mov     si, [ds:si+6]
+        mov     ds, ax
 
-        mov     ax, 0a000h
-        mov     es, ax
+        IRP plane, <0,1,2,3>
+            ; effective plane => cx
+            mov     cx, [x]
+            and     cx, 3
+            add     cx, plane
+            and     cx, 3
 
-; bh: Count down number of pixels in current block
-; bl: image height
-; cx: Count up number of pixels to draw
-; dh: z-value
-; dl: image plane width
-;
-; ds: image
-; es: video memory
-; gs: z-buffer
+            ; z-buffer => gs
+            mov     ax, 1000h
+            mul     cx
+            mov     dx, [ZBufferStart]
+            add     dx, ax
+            mov     gs, dx
 
-@@DrawPlane:
-        pop     ds
-        push    bx
+            ;--- set plane
+            mov     ax, 0102h
+            shl     ah, cl
+            mov     dx, ScIndex
+            out     dx, ax
 
-        ; gs = z-buffer segment for current plane
-        mov     ax, 1000h
-        movzx   cx, [plane]
-        mov     bx, [x]
-        and     bx, 3
-        add     bx, cx
-        and     bx, 3
-        mul     bx
-        add     ax, [ZBufferSegment]
-        mov     gs, ax
+            mov     di, [Start]     ; start address
 
-        ; calculate effective plane
-        ; ax = 1 shl ((plane + planeshift) mod 4)
-        movzx   bx, [plane]
-        mov     cx, [x]
-        and     cx, 3
-        add     cx, bx
-        and     cx, 3
-        mov     ax, 1
-        shl     ax, cl
+            mov     cx, [x]
+            and     cx, 3
+            add     cx, plane
+            cmp     cx, 3
+            jle     @@Start&plane
 
-        ; set plane
-        shl     ax, 8
-        mov     al, 2
-        mov     dx, ScIndex
-        out     dx, ax
+            add     di, 1
 
-        mov     di, [Start]
+        @@Start&plane:
+            mov     cl, [Height]
 
-        mov     cx, [x]
-        and     cx, 3
-        add     cx, bx
-        cmp     cx, 3
-        jle     @@Next
+            mov     dh, [z]
 
-        add     di, 1
+        @@MainLoop&plane:
+            lodsb
+            xor     ah, ah
+            mov     bx, ax
+            add     bx, bx
+            call    [DrawFuncs+bx]
+            add     di, PlaneWidth
 
-@@Next:
-        pop     bx
-
-        mov     bl, [Height]
-
-        mov     dh, [z]
-
-        push    ds
-        mov     ds, [imageseg]
-
-        mov     cx, 0               ; number of pixels to draw
-
-@@StartOver:
-        mov     dl, [pwidth]
-
-@@MainLoop:
-        lodsw
-        or      ax, ax
-        jz      @@NextLine
-
-        or      al, al
-        jz      @@SkipPixels
-
-@@Draw:
-        mov     bh, al              ; number of pixels in current block
-        sub     dl, bh
-        dec     si
-
-@@NextPixel:
-        cmp     dh, [gs:[di]]
-        jb      @@SkipPixel
-
-        inc     cl
-        inc     di
-
-        dec     bh
-        jnz     @@NextPixel
-
-        sub     di, cx
-        rep     movsb
-
-        jmp     @@MainLoop
-
-@@SkipPixel:
-        sub     di, cx
-        rep     movsb
-
-        inc     si
-        inc     di
-
-        dec     bh
-        jnz     @@NextPixel
-
-        jmp     @@MainLoop
-
-@@SkipPixels:
-        movzx   ax, ah
-        add     di, ax
-        sub     dl, al
-
-        jmp     @@MainLoop
-
-@@NextLine:
-        add     di, [LineOffset]
-        movzx   ax, dl
-        add     di, ax
-
-        dec     bl
-        jnz     @@StartOver
-
-        inc     [plane]
-        cmp     [plane], 4
-        jb      @@DrawPlane
+            dec     cl
+            jnz     @@MainLoop&plane
+        ENDM
 
         pop     ds
 
@@ -390,9 +309,17 @@ ENDP    X_DrawAlpha
 
 PROC    X_DrawAlphaZ FAR
         ARG     page:BYTE, x:WORD, y:WORD, z:BYTE, image:DWORD = ArgSize
-        LOCAL   imageseg:WORD, imageofs:WORD, Start:WORD, Height:BYTE, plane:BYTE, pwidth:BYTE, LineOffset:WORD = StackSize
+        LOCAL   Start:WORD, Height:BYTE = StackSize
 
         push    ds
+
+        ; video memory => es
+        mov     ax, 0a000h
+        mov     es, ax
+
+        ; z-buffer => gs
+        mov     dx, [WORD PTR ZBufferSegment]
+        mov     gs, dx
 
         ; Start = CurPageOffset + y * PlaneWidth + x / 4
         SetVMemOffset page, [Start]
@@ -410,124 +337,38 @@ PROC    X_DrawAlphaZ FAR
         mov     al, [ds:si+2]
         mov     [Height], al
 
-        ; pwidth = image.width / 4
-        mov     al, [ds:si]
-        shr     al, 2
-        mov     [pwidth], al
-
-        ; LineOffset = PlaneWidth - pwidth
-        mov     [LineOffset], PlaneWidth
-        sub     [LineOffset], ax
-
-        mov     [plane], 0
-
         ; image data => ds:si
         mov     ax, [ds:si+8]
-        mov     [imageseg], ax
         mov     si, [ds:si+6]
+        mov     ds, ax
 
-        mov     ax, 0a000h
-        mov     es, ax
+        IRP plane, <0,1,2,3>
+            ;--- set plane
+            mov     ax, &(0100h SHL plane + 02h)
+            mov     dx, ScIndex
+            out     dx, ax
 
-; bh: Count down number of pixels in current block
-; bl: image height
-; cx: Count up number of pixels to draw
-; dh: z-value
-; dl: image plane width
-;
-; ds: image
-; es: video memory
-; gs: z-buffer
+            mov     di, [Start]     ; start address
 
-@@DrawPlane:
-        pop     ds
+            mov     cl, [Height]
 
-        ; gs = z-buffer segment for current plane
-        mov     ax, 1000h
-        movzx   cx, [plane]
-        mul     cx
-        add     ax, [ZBufferSegment]
-        mov     gs, ax
+            mov     dh, [z]
 
-        ; set plane
-        mov     ax, 0102h
-        shl     ah, cl
-        mov     dx, ScIndex
-        out     dx, ax
+        @@MainLoop&plane:
+            lodsb
+            xor     ah, ah
+            mov     bx, ax
+            add     bx, bx
+            call    [DrawZFuncs+bx]
+            add     di, PlaneWidth
 
-        mov     di, [Start]         ; start address
+            dec     cl
+            jnz     @@MainLoop&plane
 
-        mov     bl, [Height]
-
-        mov     dh, [z]
-
-        push    ds
-        mov     ds, [imageseg]
-
-        mov     cx, 0               ; number of pixels to draw
-
-@@StartOver:
-        mov     dl, [pwidth]
-
-@@MainLoop:
-        lodsw
-        or      ax, ax
-        jz      @@NextLine
-
-        or      al, al
-        jz      @@SkipPixels
-
-@@Draw:
-        mov     bh, al              ; number of pixels in current block
-        sub     dl, bh
-        dec     si
-
-@@NextPixel:
-        cmp     dh, [gs:[di]]
-        jb      @@SkipPixel
-
-        mov     [gs:[di]], dh
-        inc     cl
-        inc     di
-
-        dec     bh
-        jnz     @@NextPixel
-
-        sub     di, cx
-        rep     movsb
-
-        jmp     @@MainLoop
-
-@@SkipPixel:
-        sub     di, cx
-        rep     movsb
-
-        inc     si
-        inc     di
-
-        dec     bh
-        jnz     @@NextPixel
-
-        jmp     @@MainLoop
-
-@@SkipPixels:
-        movzx   ax, ah
-        add     di, ax
-        sub     dl, al
-
-        jmp     @@MainLoop
-
-@@NextLine:
-        add     di, [LineOffset]
-        movzx   ax, dl
-        add     di, ax
-
-        dec     bl
-        jnz     @@StartOver
-
-        inc     [plane]
-        cmp     [plane], 4
-        jb      @@DrawPlane
+            mov     dx, gs
+            add     dx, 1000h
+            mov     gs, dx
+        ENDM
 
         pop     ds
 

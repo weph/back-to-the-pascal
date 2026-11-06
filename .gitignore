@@ -1,5 +1,7 @@
 node_modules
-game/build/*
+game/BUILD/*
+game/UNITS/DRAW.ASM
+game/UNITS/DRAWZ.ASM
 *.BAK
 *.TPU
 *.EXE
