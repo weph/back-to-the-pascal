@@ -5,14 +5,14 @@ uses
     VGA,
     ModeX,
     Types,
-    Iso,
+    MapRendr,
     Renderer,
     Debug,
     ZBuf;
 
 var
     MapScroll: TCoordinate;
-    MapRenderer: TIsometricMapRenderer;
+    MapRenderer: TMapRenderer;
     Page: Byte;
     MaxScrollX: Word;
     SW1, SW2: TStopwatch;

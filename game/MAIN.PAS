@@ -16,7 +16,7 @@ uses
     Malloc,
     Globals,
     Renderer,
-    Iso,
+    MapRendr,
     ZBuf;
 
 var
@@ -133,7 +133,7 @@ begin
 end;
 
 var
-    MapRenderer: TIsometricMapRenderer;
+    MapRenderer: TMapRenderer;
 
 begin
     InitModeX;
