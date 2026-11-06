@@ -4,7 +4,7 @@ interface
 
 uses
     Types,
-    IsoMap,
+    GameMap,
     Image,
     Sprite;
 
