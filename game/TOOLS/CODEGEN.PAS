@@ -45,7 +45,8 @@ procedure GeneratePixelCode(
     var JumpTarget: Byte;
     ZBufOffs: Byte;
     var VideoOffs: Byte;
-    ModifyZBuffer: Boolean
+    ModifyZBuffer: Boolean;
+    PixelLocation: string
 );
 begin
     WriteLn(F, '    cmp dh, ', ZBufLocation);
@@ -55,8 +56,13 @@ begin
         WriteLn(F, '    mov [gs:di+', ZBufOffs, '], dh');
     end;
 
-    WriteLn(F, '    mov al, [si+', VideoOffs, ']');
-    WriteLn(F, '    mov [es:di+', ZBufOffs, '], al');
+    if PixelLocation <> '' then begin
+        WriteLn(F, '    mov [es:di+', ZBufOffs, '], ', PixelLocation);
+    end
+    else begin
+        WriteLn(F, '    mov al, [si+', VideoOffs, ']');
+        WriteLn(F, '    mov [es:di+', ZBufOffs, '], al');
+    end;
 
     Inc(VideoOffs);
 end;
@@ -67,6 +73,14 @@ var
 begin
     Str(Offset, S);
     GsDiAt := '[gs:di+' + S + ']';
+end;
+
+function SiAt(Offset: Byte): string;
+var
+    S: string;
+begin
+    Str(Offset, S);
+    SiAt := '[si+' + S + ']';
 end;
 
 procedure GenerateJumpTarget(var F: Text; var JumpTarget: Byte);
@@ -99,60 +113,106 @@ begin
     for Nibble := 0 to 1 do begin
         Offset := Nibble * 4;
 
-        { Only bits 0 and 1 are set => load word into bx }
+        { Only bits 0 and 1 are set => load z-buffer word into bx and both pixels into ax }
         if Bits[Offset + 0] and Bits[Offset + 1] and not Bits[Offset + 2] and not Bits[Offset + 3] then begin
             GenerateJumpTarget(F, JumpTarget);
+            WriteLn(F, '    mov ax, ', SiAt(Pixel));
             WriteLn(F, '    mov bx, ', GsDiAt(Offset));
-            GeneratePixelCode(F, 'bl', JumpTarget, Offset + 0, Pixel, ModifyZBuffer);
+            GeneratePixelCode(F, 'bl', JumpTarget, Offset + 0, Pixel, ModifyZBuffer, 'al');
 
             GenerateJumpTarget(F, JumpTarget);
-            if not Bits[Offset + 0] then
-                WriteLn(F, '    mov bx, ', GsDiAt(Offset));
-            GeneratePixelCode(F, 'bh', JumpTarget, Offset + 1, Pixel, ModifyZBuffer);
+            GeneratePixelCode(F, 'bh', JumpTarget, Offset + 1, Pixel, ModifyZBuffer, 'ah');
         end
-        { At least one lower and one upper bit is set => load double word into ebx }
-        else if ((Bits[Offset + 0] or Bits[Offset + 1]) and (Bits[Offset + 2] or Bits[Offset + 3])) then begin
-            if Bits[Offset + 0] then begin
-                GenerateJumpTarget(F, JumpTarget);
-                WriteLn(F, '    mov ebx, ', GsDiAt(Offset));
-                GeneratePixelCode(F, 'bl', JumpTarget, Offset + 0, Pixel, ModifyZBuffer);
-            end;
-
-            if Bits[Offset + 1] then begin
-                GenerateJumpTarget(F, JumpTarget);
-                if not Bits[Offset + 0] then
-                    WriteLn(F, '    mov ebx, ', GsDiAt(Offset));
-                GeneratePixelCode(F, 'bh', JumpTarget, Offset + 1, Pixel, ModifyZBuffer);
-            end;
-
-            if Bits[Offset + 2] then begin
-                GenerateJumpTarget(F, JumpTarget);
-                WriteLn(F, '    shr ebx, 16');
-                GeneratePixelCode(F, 'bl', JumpTarget, Offset + 2, Pixel, ModifyZBuffer);
-            end;
-
-            if Bits[Offset + 3] then begin
-                GenerateJumpTarget(F, JumpTarget);
-                if not Bits[Offset + 2] then
-                    WriteLn(F, '    shr ebx, 16');
-                GeneratePixelCode(F, 'bh', JumpTarget, Offset + 3, Pixel, ModifyZBuffer);
-            end;
-        end
-        { Only bit 2 and 3 are set => load high word into bx }
-        else if Bits[Offset + 2] and Bits[Offset + 3] then begin
+        { Only bit 2 and 3 are set => load high word into bx and both pixels into ax }
+        else if not Bits[Offset + 0] and not Bits[Offset + 1] and Bits[Offset + 2] and Bits[Offset + 3] then begin
             GenerateJumpTarget(F, JumpTarget);
+            WriteLn(F, '    mov ax, ', SiAt(Pixel));
             WriteLn(F, '    mov bx, ', GsDiAt(Offset + 2));
-            GeneratePixelCode(F, 'bl', JumpTarget, Offset + 2, Pixel, ModifyZBuffer);
+            GeneratePixelCode(F, 'bl', JumpTarget, Offset + 2, Pixel, ModifyZBuffer, 'al');
 
             GenerateJumpTarget(F, JumpTarget);
-            GeneratePixelCode(F, 'bh', JumpTarget, Offset + 3, Pixel, ModifyZBuffer);
+            GeneratePixelCode(F, 'bh', JumpTarget, Offset + 3, Pixel, ModifyZBuffer, 'ah');
+        end
+        { all bit set => load all pixels into eax }
+        else if Bits[Offset + 0] and Bits[Offset + 1] and Bits[Offset + 2] and Bits[Offset + 3] then begin
+            GenerateJumpTarget(F, JumpTarget);
+            WriteLn(F, '    mov eax, ', SiAt(Pixel));
+            WriteLn(F, '    mov ebx, ', GsDiAt(Offset));
+            GeneratePixelCode(F, 'bl', JumpTarget, Offset + 0, Pixel, ModifyZBuffer, 'al');
+
+            GenerateJumpTarget(F, JumpTarget);
+            GeneratePixelCode(F, 'bh', JumpTarget, Offset + 1, Pixel, ModifyZBuffer, 'ah');
+
+            GenerateJumpTarget(F, JumpTarget);
+            WriteLn(F, '    shr eax, 16');
+            WriteLn(F, '    shr ebx, 16');
+            GeneratePixelCode(F, 'bl', JumpTarget, Offset + 2, Pixel, ModifyZBuffer, 'al');
+
+            GenerateJumpTarget(F, JumpTarget);
+            GeneratePixelCode(F, 'bh', JumpTarget, Offset + 3, Pixel, ModifyZBuffer, 'ah');
+        end
+        { At least one lower and one upper bit is set => load double word into ebx... }
+        else if ((Bits[Offset + 0] or Bits[Offset + 1]) and (Bits[Offset + 2] or Bits[Offset + 3])) then begin
+            { ... bits 0 AND 1 => load both pixels into ax }
+            if Bits[Offset + 0] and Bits[Offset + 1] then begin
+                GenerateJumpTarget(F, JumpTarget);
+                WriteLn(F, '    mov ax, ', SiAt(Pixel));
+                WriteLn(F, '    mov ebx, ', GsDiAt(Offset));
+                GeneratePixelCode(F, 'bl', JumpTarget, Offset + 0, Pixel, ModifyZBuffer, 'al');
+
+                GenerateJumpTarget(F, JumpTarget);
+                GeneratePixelCode(F, 'bh', JumpTarget, Offset + 1, Pixel, ModifyZBuffer, 'ah');
+            end
+            { copy pixels directly from memory }
+            else begin
+                if Bits[Offset + 0] then begin
+                    GenerateJumpTarget(F, JumpTarget);
+                    WriteLn(F, '    mov ebx, ', GsDiAt(Offset));
+                    GeneratePixelCode(F, 'bl', JumpTarget, Offset + 0, Pixel, ModifyZBuffer, '');
+                end;
+
+                if Bits[Offset + 1] then begin
+                    GenerateJumpTarget(F, JumpTarget);
+                    if not Bits[Offset + 0] then begin
+                        WriteLn(F, '    mov ebx, ', GsDiAt(Offset));
+                    end;
+                    GeneratePixelCode(F, 'bh', JumpTarget, Offset + 1, Pixel, ModifyZBuffer, '');
+                end;
+            end;
+
+            { ... bits 2 AND 3 => load both pixels into ax }
+            if Bits[Offset + 2] and Bits[Offset + 3] then begin
+                GenerateJumpTarget(F, JumpTarget);
+                WriteLn(F, '    mov ax, ', SiAt(Pixel));
+                WriteLn(F, '    shr ebx, 16');
+                GeneratePixelCode(F, 'bl', JumpTarget, Offset + 2, Pixel, ModifyZBuffer, 'al');
+
+                GenerateJumpTarget(F, JumpTarget);
+                GeneratePixelCode(F, 'bh', JumpTarget, Offset + 3, Pixel, ModifyZBuffer, 'ah');
+            end
+            { copy pixels directly from memory }
+            else begin
+                if Bits[Offset + 2] then begin
+                    GenerateJumpTarget(F, JumpTarget);
+                    WriteLn(F, '    shr ebx, 16');
+                    GeneratePixelCode(F, 'bl', JumpTarget, Offset + 2, Pixel, ModifyZBuffer, '');
+                end;
+
+                if Bits[Offset + 3] then begin
+                    GenerateJumpTarget(F, JumpTarget);
+                    if not Bits[Offset + 2] then begin
+                        WriteLn(F, '    shr ebx, 16');
+                    end;
+                    GeneratePixelCode(F, 'bh', JumpTarget, Offset + 3, Pixel, ModifyZBuffer, '');
+                end;
+            end;
         end
         { Nothing to optimize... compare directly against bytes at memory location }
         else begin
             for Bit := 0 to 3 do begin
                 if Bits[Offset + Bit] then begin
                     GenerateJumpTarget(F, JumpTarget);
-                    GeneratePixelCode(F, GsDiAt(Offset + Bit), JumpTarget, Offset + Bit, Pixel, ModifyZBuffer);
+                    GeneratePixelCode(F, GsDiAt(Offset + Bit), JumpTarget, Offset + Bit, Pixel, ModifyZBuffer, '');
                 end;
             end;
         end;
